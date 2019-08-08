@@ -1,0 +1,167 @@
+<component-table>
+    <table class="table table-hover table-sm" onkeyup="{controlModifier}" onkeydown="{controlModifier}">
+        <thead class="thead-dark">
+            <tr>
+                <th>#</th>
+                <th if="{key!=state.PKID}" each="{key in state.datakeys}" scope="col">{key}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr each="{(row,index) in state.data}">
+                <td>{index+1}</td>
+                <td if="{key!=state.PKID}" class="c-pointer" each="{key in state.datakeys}" onclick="{ ()=>editState([index,key]) }"> 
+                    <span if="{state.pathstr!=JSON.stringify([index,key])}">{row[key]}</span>
+                    <input  id="{'input-control-'+index+'-'+key}" 
+                            class="w-100" if="{state.pathstr==JSON.stringify([index,key])}" 
+                            type="textbox" value="{row[key]}" 
+                            onchange="{applyEdit}" 
+                            onkeydown="{control}"
+                            onblur="{()=>leavetable([index,key])}"/>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <style>
+        .c-pointer{
+            cursor:pointer;
+        }
+    </style>
+    <script>
+        export default {
+            state : {
+                data:[{
+                    "Id":1,
+                    "Name":"Ryan",
+                    "Age":27,
+                    "Is":false
+                },{
+                    "Id":2,
+                    "Name":"Kiichi",
+                    "Age":"NA",
+                    "Is":false
+                },{
+                    "Id":3,
+                    "Name":"Justin",
+                    "Age":"NA",
+                    "Is":false
+                }],
+                path:[],
+                pathstr:"",
+                datakeys:[],
+                PKID:"Id",
+                tabbed:false,
+                shiftmodifier:false
+            },
+            onBeforeMount(props,state){
+                this.state.datakeys=Object.keys(this.state.data[0]);
+                let PKIDindex = this.state.datakeys.indexOf(this.state.PKID);
+                this.state.datakeys.splice(PKIDindex,1);
+            },
+            control(e){
+                
+                e.path[0].dispatchEvent(new Event("change"));
+                if(e.code == "Tab" || e.code =="ArrowDown"){
+                    e.preventDefault();
+                }
+                setTimeout(()=>{
+                    let datakeys=this.state.datakeys;
+                    let rowpathindex=this.state.path.length-2;
+                    let keypathindex=this.state.path.length-1;
+                    let curkey= this.state.path[keypathindex];
+                    let curkeyindex;
+                    let rowindex= this.state.path[rowpathindex];
+                    this.state.datakeys.forEach((key,index)=>{
+                        if(key==curkey){
+                            curkeyindex=index;
+                        }
+                    })
+                    if(curkeyindex===undefined || curkeyindex==null){
+                        rowindex < this.state.data.length-1  ? this.state.path[rowpathindex]++ : 0
+                        curkeyindex=0;
+                    }
+                    if(e.code == "Tab"){
+                        if(this.state.shiftmodifier){
+                            if(curkeyindex==0){
+                                rowindex == 0  ? this.state.path[rowpathindex]=this.state.data.length-1 : this.state.path[rowpathindex]-- ;
+                            }
+                            else{
+                                curkeyindex--
+                            }
+                        }
+                        else{   
+                            if(curkeyindex<datakeys.length-1){
+                                curkeyindex++
+                            }
+                            else{
+                                curkeyindex=0;
+                                rowindex < this.state.data.length-1  ? this.state.path[rowpathindex]++ : 0
+                            } 
+                        }
+                        this.state.path[keypathindex]=datakeys[curkeyindex];
+                        this.state.preventdupchange=true;
+                        this.editState(this.state.path);
+                    }
+                    if(e.code == "Enter" || e.code == "ArrowDown") {
+                        if(e.code == "ArrowDown"){
+                            this.state.preventdupchange=true;
+                        }
+                        rowindex < this.state.data.length-1  ? this.state.path[rowpathindex]++ : 0
+                        this.editState(this.state.path)
+                    }
+                    if(e.code == "ArrowUp"){
+                        this.state.preventdupchange=true;
+                        rowindex == 0 ? this.state.path[rowpathindex] = this.state.data.length-1 : this.state.path[rowpathindex]--;
+                        this.editState(this.state.path);
+                    }
+                    if(e.code == "Escape"){
+                        e.path[0].dispatchEvent(new Event("change"));
+                        this.editState([]);
+                    }
+                    
+                },200);
+            },
+            controlModifier(e){
+                console.log(e);
+                if(e.code=="ShiftLeft"){
+                    if(e.type=="keydown"){
+                        this.state.shiftmodifier=true;
+                    }
+                    else if(e.type=="keyup"){
+                        this.state.shiftmodifier=false;
+                    }
+                }
+            },
+            leavetable(path){
+                let oldvalue = JSON.stringify(path);
+                setTimeout(()=>{
+                    oldvalue == this.state.pathstr ? this.editState([]) : false ;
+                },200)
+            },
+            editState(path){
+                let exists = this.state.pathstr != JSON.stringify(path) && JSON.stringify(path) !="[]";
+                this.state.path=path;
+                this.state.pathstr=JSON.stringify(path);
+                this.update();
+                if(exists){
+                    let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1];
+                    if(path.length>0){
+                        this.$(id).focus();
+                        this.$(id).select();
+                    }
+                }
+            },
+            applyEdit(e){
+                if(this.state.preventdupchange==false){
+                    let path = this.state.path;
+                    if(path.length>0){
+                        this.state.data[path[0]][path[1]] = e.target.value;
+                        this.update();
+                    }
+                }
+                else{
+                    this.state.preventdupchange=false;
+                }
+            }
+        }
+    </script>
+</component-table>
