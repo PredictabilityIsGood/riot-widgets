@@ -2,5 +2,5 @@
     await riot.compile();
 
     console.log("compilation done");
-    riot.mount("component-table");
+    riot.mount("widget-grid");
 }())

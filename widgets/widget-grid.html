@@ -1,0 +1,689 @@
+<widget-grid>
+    <table class="table table-hover table-sm" onkeyup="{controlModifier}" onkeydown="{controlModifier}">
+        <thead class="widget-grid-header thead-{bg}">
+            <tr>
+                <th class="cell-counter border-{border} text-muted">#</th>
+                <th onclick="{()=>sort(key)}" class="c-pointer button-{bg} text-{text} row-header" if="{key in state.options && state.options[key].visible==true}" each="{key in state.datakeys}" scope="col">{state.options[key].alias || key} 
+                    <span class="float-right w-0">
+                        <span if="{state.sort[key] && state.sort[key].type=='DESC'}" id="{key+'-DESC'}" class="order-desc">
+                                &#10142;
+                        </span>
+                        <span if="{state.sort[key] && state.sort[key].type=='ASC'}" id="{key+'-ASC'}" class="order-asc">
+                                &#10142;
+                        </span>
+                    </span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr if="{isVisible(index)}" each="{(row,index) in state.data}">
+                <td onclick="{rowMenu}" class="cell-counter border-{border} bg-{bg} text-{text} {state.tableOptions.delete ? 'c-pointer':'' }">
+                    <span class="row-menu-wrapper">
+                        {index+1}
+                        <span data-deletekey="{getDeleteKey(row)}" onclick="{applyDelete}" if="{state.tableOptions.delete && state.mode=='modify'}" class="row-menu badge badge-danger">Remove</span>
+                    </span>
+                </td>
+                <td if="{key in state.options && state.options[key].visible==true}" 
+                    class="c-pointer {matchContents ? 'border-'+border : ''} {matchContents ? 'bg-'+bg : ''} {matchContents ? 'text-'+text : ''}" 
+                    each="{key in state.datakeys}" onclick="{ ()=>editState([index,key]) }"> 
+                    <span if="{state.pathstr!=JSON.stringify([index,key]) || (!state.options[key].put)}">{row[key]}</span>
+                    <input if="{state.pathstr==JSON.stringify([index,key]) && state.options[key].put  }"
+                            class="w-100" id="{'input-control-'+index+'-'+key+'-'+state.pkidstr }" 
+                            type="{ getInputType(state.options[key].type) }" value="{state.data[index][key]}" 
+                            onchange="{applyPut}" onkeydown="{control}"
+                            onblur="{()=>leavetable([index,key])}"/>
+                </td>
+            </tr>
+            <tr if="{state.mode=='post'}">
+                <td onclick="{applyPost}" class="cell-counter cell-post border-{border} bg-{bg} text-{text} c-pointer">
+                    <span class="badge badge-success">
+                        ADD
+                    </span>
+                </td>
+                <td if="{key in state.options && state.options[key].visible==true}" 
+                    each="{key in state.datakeys}">
+                    <input  data-postkey="{key}" class="w-100" 
+                            type="{ getInputType(state.options[key].type) }"  
+                            onchange="{editPost}" value="{key in state.new ? state.new[key] : null}"/>
+                </td>
+            </tr>
+        </tbody>
+        <tfoot class="bg-{bg} text-{text}">
+            <tr>
+                <td class="cell-counter cell-counter-bottom c-pointer">
+                    <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge badge-success">
+                        <span if="{state.mode!='post'}">+</span>
+                        <span if="{state.mode=='post'}">x</span>
+                    </span>
+                </td>
+                <td class="footer-cell-control" 
+                    colspan="1">
+                    show
+                    <select onchange="{setPageCount}">
+                        <option val="1">1</option>
+                        <option val="10" selected>10</option>
+                        <option val="25">25</option>
+                        <option val="50">50</option>
+                        <option val="100">100</option>
+                    </select>
+                </td>
+                <td class="footer-cell-control" 
+                    colspan="{state.datakeys.length-2}">
+                    page
+                    <button class="footer-pagination-button" if="{state.pagination.page>1}" onclick="{setPage}" value="1" href="#">&#8676;</button>
+                    <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
+                    <input class="footer-cell-control-page-input" type="number" value="{state.pagination.page}" onchange="{setPage}">
+                    <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{state.pagination.page+1}">{state.pagination.page+1}</button>
+                    <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}" href="#">&#8677;</button>
+                    of {Math.ceil(state.data.length/state.pagination.show)}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    <style>
+        table { 
+            font-size:1rem;
+            line-height:1.5rem;
+        }
+        .border-dark {
+            border-color:#454d55 !important;
+        }
+        .border-light {
+            border-color:#dee2e6 !important;
+        }
+        .cell-post {
+            min-width:45px !important;
+            max-width:45px !important;
+            width:45px !important;
+        }
+        .cell-counter {
+            min-width:25px;
+            max-width:25px;
+            width:25px;
+            border-bottom:1px solid;
+            font-weight:300;
+            font-size:.9rem;
+            line-height:1.5rem;
+            overflow:hidden;
+        }
+        .cell-counter-bottom {
+            border-bottom:none;
+        }
+        .row-header {
+            font-weight:400;
+        }
+        .row-menu-wrapper {
+            position:relative;
+            white-space:nowrap;
+        }
+        .row-menu {
+            position:absolute;
+            left:20px;
+            top:5px; 
+        }
+        .footer-cell-control {
+            outline:none;
+            border-top:none !important;
+            font-size:.8rem;
+            font-weight:300;
+            padding-top:.5rem;
+            padding-bottom:.5rem;
+        }
+        .footer-pagination-button {
+            height:1.3rem;
+            line-height:.9rem;
+        }
+        .footer-cell-control-page-input{
+            width:30px;
+            height:1.3rem;
+            font-weight:600;
+        }   
+        .order-desc{
+            display:inline-block;
+            -webkit-transform: rotateZ(90deg); /* Safari prior 9.0 */
+            transform: rotateZ(90deg); /* Standard syntax */
+            font-size:.8rem;
+        }
+        .order-asc{
+            display:inline-block;
+            -webkit-transform: rotateZ(-90deg); /* Safari prior 9.0 */
+            transform: rotateZ(-90deg); /* Standard syntax */
+            font-size:.8rem;
+        }
+        .c-pointer{
+            cursor:pointer;
+        }
+        
+        .widget-grid-header * {
+            user-select: none; /* CSS3 (little to no support) */
+        -ms-user-select: none; /* IE 10+ */
+       -moz-user-select: none; /* Gecko (Firefox) */
+    -webkit-user-select: none; /* Webkit (Safari, Chrome) */
+        }
+        input[type="checkbox"],input[type="radio"]{
+            height:15px;
+            outline:none!important;
+        }
+    </style>
+    <script>
+        export default {
+            state : {
+                data:[{
+                    "Id":1,
+                    "Name":"Ryan Montgomery",
+                    "Age":27,
+                    "Email":"Ryan.Montgomery@liu.edu",
+                    "Is":false
+                },{
+                    "Id":2,
+                    "Name":"Kiichi Takeuchi",
+                    "Age":null,
+                    "Email":"Kiichi.Takeuchi@liu.edu",
+                    "Is":true
+                },{
+                    "Id":3,
+                    "Name":"Justin Fusco",
+                    "Age":null,
+                    "Email":"Justin.Fusco@liu.edu",
+                    "Is":false
+                },{
+                    "Id":4,
+                    "Name":"Justin Lau",
+                    "Age":null,
+                    "Email":"Justin.Lau@liu.edu",
+                    "Is":false
+                },{
+                    "Id":5,
+                    "Name":"James Wankel",
+                    "Age":null,
+                    "Email":"James.Wankel@liu.edu",
+                    "Is":false
+                }],
+                new:{},
+                path:[],
+                pathstr:"",
+                datakeys:[],
+                shiftmodifier:false,
+                tabbed:false,
+                pagination:{
+                    show:10,
+                    page:1
+                },
+                sort:{},
+                callbacks:{},
+                options:{},
+                tableOptions:{},
+                mode:""
+            },
+            preventNextChange:false,
+            border:"dark",
+            bg:"dark",
+            text:"light",
+            matchContents:false,
+            debugMode:true,
+            debug:{
+                options:{
+                    "Id":{
+                        alias:"UserID",
+                        visible:false,
+                        pk:true,
+                        put:false
+                    },
+                    "Name":{
+                        alias:"Involved Person"
+                    },
+                    "Age":{
+                        alias:"Incident Age",
+                        type:Number,
+                    },
+                    "Is":{
+                    }
+                },
+                tableOptions:{
+                    post:true,
+                    delete:true
+                }
+            },
+            defaults:{
+                callbacks:{
+                    put:(updated)=> console.log(updated),
+                    post:(created)=> console.log(created),
+                    delete:(deleted)=> console.log(deleted)
+                },
+                options:{
+                    alias:null,
+                    type:String,
+                    autotype:(value)=>{return value.constructor},
+                    visible:true,
+                    put:true,
+                    pk:false
+                },
+                tableOptions:{
+                    delete:true,
+                    post:true
+                },
+                typesort:{
+                    "String":(a,b)=>{
+                        return a.localeCompare(b);
+                    },
+                    "Number":(a,b)=>{
+                        a=a==null?-Infinity:a;
+                        b=b==null?-Infinity:b;
+                        return parseFloat(a)-parseFloat(b);
+                    },
+                    "Date":(a,b)=>{
+                        return a-b;
+                    },
+                    "Boolean":(a,b)=>{
+                        return a-b;
+                    }
+                }
+            },
+            onBeforeMount(props,state){
+                props = this.debugMode ? this.debug : props;
+
+                window.onkeydown=(e)=>{
+                    this.controlModifier(e);
+                }
+                window.onkeyup=(e)=>{
+                    this.controlModifier(e);
+                }
+
+                // set initial data keys                
+                this.state.datakeys=Object.keys(this.state.data[0]);
+
+                // set underlying table data
+                this.state.data = props.data || this.state.data ;
+                
+                // set table operation callbacks
+                let callbacks = Object.assign({},this.defaults.callbacks);
+                Object.keys(callbacks).forEach((callback)=>{
+                    callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
+                });
+                this.state.callbacks=callbacks;
+
+                // set column options (autotype, typeoverride, visible, insert, update, delete, pk)
+                this.state.datakeys.forEach((key)=>{
+                    let columnOptions=Object.assign({},this.defaults.options);
+                    
+                    Object.keys(columnOptions).forEach((optionname)=>{
+                        columnOptions[optionname] = props.options[key] && optionname in props.options[key] ? props.options[key][optionname] : columnOptions[optionname];
+                    });
+
+                    if(!(key in props.options) || !props.options[key].type ){
+                        let i=0; //search until first auto-type is found for col not null
+                        let autotype=null;
+                        while(autotype==null && i<this.state.data.length){
+                            if(this.state.data[i][key]!=null){
+                                columnOptions.autotype=columnOptions.autotype(this.state.data[i][key]);
+                                autotype=true;
+                            }
+                            i++;
+                        }
+                        columnOptions.type=columnOptions.autotype;
+                    }
+                    
+                    this.state.options[key] = columnOptions; // set column options
+                });
+
+                // set table options (post,delete)
+                this.state.tableOptions = Object.assign({},this.defaults.tableOptions);
+                this.state.tableOptions = props.tableOptions ? Object.assign(this.state.tableOptions,props.tableOptions):this.state.tableOptions; 
+
+                // set typesort options
+                this.state.typesort = Object.assign({},this.defaults.typesort);
+                this.state.typesort = props.typesort ? Object.assign(this.state.typesort,props.typesort) : this.state.typesort;
+                
+                this.state.pkidarr = this.getPKID();
+                this.state.pkidstr = this.state.pkidarr.join('-');
+
+            },
+            getPKID(){
+                let PKID = [];
+                this.state.datakeys.forEach((key)=>{
+                    this.state.options[key].pk ? PKID.push(key) : 0 ;
+
+                })
+                return PKID;
+            },
+            getInputType(type){
+                if(type===String){
+                    return 'textbox';
+                }
+                else if(type===Number){
+                    return 'number'; 
+                }
+                else if(type===Date){
+                    return 'datetime';
+                }
+                else if(type===Boolean){
+                    return 'checkbox';
+                }
+            },
+            getInputGetMethod(type){
+                if(type===String){
+                    return (e)=>{
+                        return e.target.value; 
+                    };
+                }
+                else if(type===Number){
+                    return (e)=>{
+                        return e.target.value; 
+                    };
+                }
+                else if(type===Date){
+                    return (e)=>{
+                        return e.target.value; 
+                    };
+                }
+                else if(type===Boolean){
+                    return (e)=>{
+                        return e.target.checked; 
+                    };
+                }
+            },
+            getInputSetMethod(type){
+                if(type===String){
+                    return (el,val)=>{
+                        el.value; 
+                    };
+                }
+                else if(type===Number){
+                    return (el,val)=>{
+                        el.value=val; 
+                    };
+                }
+                else if(type===Date){
+                    return (el,val)=>{
+                        el.value=val; 
+                    };
+                }
+                else if(type===Boolean){
+                    return (el,val)=>{
+                        el.checked=val; 
+                    };
+                }
+            },
+            getDeleteKey(row){
+                return this.state.pkidarr.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
+            },
+            setPage(e){
+                if(e.target.value<1){
+                    this.state.pagination.page=1;
+                    this.update();
+                }
+                else{
+                    this.state.pagination.page=parseInt(e.target.value);
+                    this.update();
+                }
+            },
+            setPageCount(e){
+                this.state.pagination.show = e.target.value;
+                this.state.pagination.page = 1;
+                this.update();
+            },
+            rowMenu(e){
+                if(this.state.tableOptions.delete){
+                    if(e.target.getAttribute("style")==null){
+                        e.target.setAttribute('style','min-width:100px');
+                        this.state.mode="modify";
+                    }
+                    else{
+                        let counters = document.getElementsByClassName("cell-counter");
+                        for(var i=0;i<counters.length;i++){
+                            counters[0].removeAttribute("style");
+                        }
+                        this.state.mode="";
+                    }
+                    this.update();
+                }
+            },
+            postMenu(e){
+                this.state.mode = this.state.mode=="post"?"":"post";
+                this.update();
+            },
+            isVisible(rowIndex){
+                return (
+                        rowIndex+1 > (this.state.pagination.show*(this.state.pagination.page-1)) &&
+                        rowIndex+1 < (this.state.pagination.show*this.state.pagination.page)+1
+                    );
+            },
+            control(e){
+                if(e.code == "Tab" || e.code =="ArrowDown"){
+                    e.preventDefault();
+                }
+                let datakeys=this.state.datakeys;
+                let rowpathindex=this.state.path.length-2;
+                let keypathindex=this.state.path.length-1;
+                let curkey= this.state.path[keypathindex];
+                let curkeyindex;
+                let rowindex= this.state.path[rowpathindex];
+                let curpath = JSON.parse(JSON.stringify(this.state.path));
+                this.state.datakeys.forEach((key,index)=>{
+                    if(key==curkey){
+                        curkeyindex=index;
+                    }
+                })
+                if(curkeyindex===undefined || curkeyindex==null){
+                    rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
+                    curkeyindex=0;
+                }
+                if(e.code == "Tab"){
+                    this.applyPut(e,true);
+                    if(this.state.shiftmodifier){
+                        if(curkeyindex==0){
+                            rowindex == 0  ? curpath[rowpathindex]=this.state.data.length-1 : curpath[rowpathindex]-- ;
+                        }
+                        else{
+                            curkeyindex--
+                        }
+                    }
+                    else{   
+                        if(curkeyindex<datakeys.length-1){
+                            curkeyindex++
+                        }
+                        else{
+                            curkeyindex=0;
+                            rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
+                        } 
+                    }
+                    curpath[keypathindex]=datakeys[curkeyindex];
+                    this.editState(curpath,true);
+                }
+                if(e.code == "Enter" || e.code == "ArrowDown") {
+                    this.applyPut(e,true);
+                    rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
+                    this.editState(curpath,true)
+                }
+                if(e.code == "ArrowUp"){
+                    this.applyPut(e,true);
+                    rowindex == 0 ? curpath[rowpathindex] = this.state.data.length-1 : curpath[rowpathindex]--;
+                    this.editState(curpath,true);
+                }
+                if(e.code == "Escape"){
+                    this.editState([]);
+                }
+            },
+            controlModifier(e){
+                if(e.code=="ShiftLeft"){
+                    if(e.type=="keydown"){
+                        this.state.shiftmodifier=true;
+                    }
+                    else if(e.type=="keyup"){
+                        this.state.shiftmodifier=false;
+                    }
+                }
+            },
+            leavetable(path){
+                let oldvalue = JSON.stringify(path);
+                setTimeout(()=>{
+                    oldvalue == this.state.pathstr ? this.editState([]) : false ;
+                },200)
+            },
+            editState(path){
+                let exists = this.state.pathstr != JSON.stringify(path) && JSON.stringify(path) !="[]";
+                this.state.path=path;
+                this.state.pathstr=JSON.stringify(path);
+                this.update();
+                if(exists){
+                    let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
+                    if(path.length>0){
+                        let type = this.state.options[path[1]].type;
+                        let setter = this.getInputSetMethod(type);
+                        let input = this.$(id);
+                        let value = this.state.data[path[0]][path[1]];
+                        setter(input,value);
+                        if(input){
+                            input.focus();
+                            input.select();
+                        }
+                    }
+                }
+            },
+            applyPut(e,preventNextChange=false){
+                let path = this.state.path;
+                if(path.length>0 && this.preventNextChange==false){
+                    let type = this.state.options[path[1]].type;
+                    let getter = this.getInputGetMethod(type);
+                    let old=JSON.parse(JSON.stringify(this.state.data[path[0]]));
+                    this.state.data[path[0]][path[1]] = getter(e);
+                    if(JSON.stringify(old)!=JSON.stringify(this.state.data[path[0]])){
+                        this.state.callbacks.put({
+                            pkid:this.getPKID(),
+                            type:"put",
+                            old:old,
+                            new:this.state.data[path[0]]
+                        });
+                    }
+                    this.preventNextChange=preventNextChange;
+                    this.update();
+                }
+                else{
+                    this.preventNextChange=false;
+                }
+            },
+            editPost(e){
+                //save postable content to object to send
+                let key = e.target.getAttribute("data-postkey");
+                let type = this.state.options[key].type;
+                let getter = this.getInputGetMethod(type);
+                this.state.new[key]=getter(e);
+            },
+            applyPost(e){
+                //send object to post callback
+                let postback = JSON.parse(JSON.stringify(this.state.new));
+                let postbackPKID = this.getPKID();
+                let postbackPKIDObj = {};
+                postbackPKID.forEach((pkid)=>{
+                    postbackPKIDObj[pkid]=null;
+                });
+
+                this.state.callbacks.post({
+                    pkid:postbackPKID,
+                    type:"post",
+                    new:postback,
+                    confirmContent:postbackPKIDObj,
+                    confirm:(PKIDMergeObj)=>{
+                        
+                        this.state.data.push(Object.assign(postback,PKIDMergeObj));
+                        this.state.new={};
+                        this.update();
+                    }
+                });
+            },
+            applyDelete(e){
+                let deletekey = {};
+                e.target.getAttribute("data-deletekey").split("-").forEach((key)=>{
+                    let keypair = key.split("_");
+                    deletekey[keypair[0]]=keypair[1];
+                })
+                e.target.removeAttribute("style");
+                e.preventDefault();
+                e.stopPropagation();
+                this.state.callbacks.delete({
+                    old: deletekey,
+                    type:"delete",
+                    confirm:(result)=>{
+                        if(result){
+                            for(var i=0;i<this.state.data.length;i++){
+                                let match=true;
+                                Object.keys(deletekey).forEach((key)=>{
+                                    if(this.state.data[i][key]!=deletekey[key]){
+                                        let match=false;
+                                    }
+                                })
+                                if(match){
+                                    this.state.data.splice(i,1);
+                                    i=this.state.data.length;
+                                    this.update();
+                                    return;
+                                }
+                            }
+                            console.log("client side delete failed");
+                        }
+                    }
+                })
+            },
+            sort(key){
+                var numsorts = this.calcSortOrder();
+                let oldkey = key in this.state.sort && this.state.sort[key].type ? this.state.sort[key].type :"NONE";
+                if(!this.state.shiftmodifier){
+                    this.state.sort={};
+                    this.state.sort[key]={
+                        type:oldkey,
+                        order:0
+                    }
+                }
+                if(this.state.sort[key]===undefined){
+                    this.state.sort[key]={
+                        type:"DESC",
+                        order:numsorts.length-1
+                    }
+                } 
+                else if(this.state.sort[key].type=="NONE"){
+                    this.state.sort[key].type="DESC";
+                }
+                else if(this.state.sort[key].type=="DESC"){
+                    this.state.sort[key].type="ASC";
+                }
+                else if(this.state.sort[key].type=="ASC"){
+                    delete this.state.sort[key];
+                }
+
+                var finalsortorder=this.calcSortOrder();
+                this.buildSort(finalsortorder);
+                this.update();
+            },
+            calcSortOrder(){
+                var numsorts = Object.keys(this.state.sort);
+                for(var i=0;i<numsorts.length-1;i++){
+                    if(this.state.sort[numsorts[i]].order > this.state.sort[numsorts[i+1]].order){
+                        let forward = numsorts[i];
+                        numsorts=numsorts.splice(i,1,numsorts[i+1]);
+                        numsorts[i+1]=forward;
+                    }
+                }
+                for(var i=0;i<numsorts.length;i++){
+                    this.state.sort[numsorts[i]].order=i;
+                }
+                return numsorts;
+            },
+            buildSort(orderedsorts){
+                var thisref=this;
+                function dimensionalSort(dimensionalsorts, dimensionalindex=0,a,b){
+                    if(dimensionalindex<dimensionalsorts.length){
+                        let key=dimensionalsorts[dimensionalindex];
+                        let sortresult=thisref.state.typesort[thisref.state.options[key].type.name](a[key],b[key]);
+                        sortresult = thisref.state.sort[key].type=="ASC" ? sortresult : -1 * sortresult;
+                        dimensionalindex++
+                        return sortresult==0 ? dimensionalSort(dimensionalsorts,dimensionalindex,a,b) : sortresult;
+                    }
+                    return 0;
+                }
+                this.state.data = this.state.data.sort((a,b)=>{ 
+                    return dimensionalSort(orderedsorts,0,a,b);
+                });
+            }
+        }
+    </script>
+</widget-grid>
