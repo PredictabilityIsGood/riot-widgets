@@ -1,7 +1,7 @@
 (async function main(){
     await riot.compile();
-
     console.log("compilation done");
+    
     riot.mount("widget-grid", 
     {
         data:[
@@ -75,9 +75,9 @@
             }
         },
         theme:{
-            bg:"dark",
-            border:"dark",
-            text:"light",
+            bg:"light",
+            border:"light",
+            text:"dark",
             matchContents:true
         }
     });
