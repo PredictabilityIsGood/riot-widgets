@@ -47,7 +47,7 @@
                 </td>
                 <td if="{key in state.options && state.options[key].visible==true}" 
                     each="{key in state.datakeys}" class="{state.theme.matchContents ? 'border-'+state.theme.border : ''} {state.theme.matchContents ? 'bg-'+state.theme.bg : ''} {state.theme.matchContents ? 'text-'+state.theme.text : ''}">
-                    <input  data-postkey="{key}" class="w-100" 
+                    <input  id="{'new-insert-'+key}" data-postkey="{key}" class="w-100" 
                             type="{ getInputType(state.options[key].type) }"  
                             onchange="{editPost}" value="{key in state.new ? state.new[key] : null}"/>
                 </td>
@@ -720,6 +720,11 @@
 
                 let confirmPost = (PKIDMergeObj)=>{
                     this.state.data.push(Object.assign(postback,PKIDMergeObj));
+                    this.state.datakeys.forEach((key)=>{
+                        let input = this.$('#new-insert-'+key);
+                        input !== undefined ? input.value='':0;
+
+                    })
                     this.state.new={};
                     this.update();
                     return confirmPost;
