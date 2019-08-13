@@ -3,7 +3,7 @@
 [demo](https://predictabilityisgood.github.io/riot-widgets/)
 
 ## Include
-```javascript
+```html
 <script src="widgets/widget-grid.html" type="riot"></script>
 ```
 
