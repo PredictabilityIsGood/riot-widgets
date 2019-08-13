@@ -18,31 +18,7 @@ riot.mount("widget-grid",
                 "Age":27,
                 "Email":"test@test.com",
                 "Is":false
-            },{
-                "Id":2,
-                "Name":"Kiichi",
-                "Age":null,
-                "Email":"anothertest@test.com",
-                "Is":true
-            },{
-                "Id":3,
-                "Name":"Justin",
-                "Age":null,
-                "Email":"testing123@test.com",
-                "Is":false
-            },{
-                "Id":4,
-                "Name":"Korey",
-                "Age":null,
-                "Email":"information@test.com",
-                "Is":false
-            },{
-                "Id":5,
-                "Name":"James",
-                "Age":null,
-                "Email":"testinformation@test.com",
-                "Is":false
-            }
+            } /*... More data */
         ],
         options:{
             "Id":{
@@ -80,6 +56,11 @@ riot.mount("widget-grid",
             "Boolean":(a,b)=>{
                 return a-b;
             }
+        },
+        callbacks:{ /* Handle your server side actions by defining your own callbacks */
+            put:(updated)=> console.log(updated),
+            post:(created)=> console.log(created),
+            delete:(deleted)=> console.log(deleted)
         },
         theme:{
             bg:"light",

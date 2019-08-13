@@ -75,9 +75,9 @@
             }
         },
         theme:{
-            bg:"light",
-            border:"light",
-            text:"dark",
+            bg:"dark",
+            border:"dark",
+            text:"light",
             matchContents:true
         }
     });
