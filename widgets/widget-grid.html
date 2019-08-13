@@ -51,6 +51,8 @@
                             type="{ getInputType(state.options[key].type) }"  
                             onchange="{editPost}" value="{key in state.new ? state.new[key] : null}"/>
                 </td>
+                <td class="cell-counter border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text}">
+                </td>
             </tr>
         </tbody>
         <tfoot class="bg-{state.theme.bg} text-{state.theme.text}">
