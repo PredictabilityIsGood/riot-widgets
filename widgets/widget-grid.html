@@ -1,9 +1,9 @@
 <widget-grid>
     <table class="table table-hover table-sm" onkeyup="{controlModifier}" onkeydown="{controlModifier}">
-        <thead class="widget-grid-header thead-{bg}">
+        <thead class="widget-grid-header thead-{state.theme.bg}">
             <tr>
-                <th class="cell-counter border-{border} text-muted">#</th>
-                <th onclick="{()=>sort(key)}" class="c-pointer button-{bg} text-{text} row-header" if="{key in state.options && state.options[key].visible==true}" each="{key in state.datakeys}" scope="col">{state.options[key].alias || key} 
+                <th class="cell-counter border-{state.theme.border} text-muted">#</th>
+                <th onclick="{()=>sort(key)}" class="c-pointer button-{state.theme.bg} text-{state.theme.text} row-header" if="{key in state.options && state.options[key].visible==true}" each="{key in state.datakeys}" scope="col">{state.options[key].alias || key} 
                     <span class="float-right w-0">
                         <span if="{state.sort[key] && state.sort[key].type=='DESC'}" id="{key+'-DESC'}" class="order-desc">
                                 &#10142;
@@ -13,18 +13,20 @@
                         </span>
                     </span>
                 </th>
+                <th class="cell-counter border-{state.theme.border} text-muted">
+                    <input onclick="{toggleAll}" type="checkbox" checked="{state.all}"/>
+                </th>
             </tr>
         </thead>
         <tbody>
             <tr if="{isVisible(index)}" each="{(row,index) in state.data}">
-                <td onclick="{rowMenu}" class="cell-counter border-{border} bg-{bg} text-{text} {state.tableOptions.delete ? 'c-pointer':'' }">
+                <td class="cell-counter border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text}">
                     <span class="row-menu-wrapper">
                         {index+1}
-                        <span data-deletekey="{getDeleteKey(row)}" onclick="{applyDelete}" if="{state.tableOptions.delete && state.mode=='modify'}" class="row-menu badge badge-danger">Remove</span>
                     </span>
                 </td>
                 <td if="{key in state.options && state.options[key].visible==true}" 
-                    class="c-pointer {matchContents ? 'border-'+border : ''} {matchContents ? 'bg-'+bg : ''} {matchContents ? 'text-'+text : ''}" 
+                    class="c-pointer {state.theme.matchContents ? 'border-'+state.theme.border : ''} {state.theme.matchContents ? 'bg-'+state.theme.bg : ''} {state.theme.matchContents ? 'text-'+state.theme.text : ''}" 
                     each="{key in state.datakeys}" onclick="{ ()=>editState([index,key]) }"> 
                     <span if="{state.pathstr!=JSON.stringify([index,key]) || (!state.options[key].put)}">{row[key]}</span>
                     <input if="{state.pathstr==JSON.stringify([index,key]) && state.options[key].put  }"
@@ -33,22 +35,25 @@
                             onchange="{applyPut}" onkeydown="{control}"
                             onblur="{()=>leavetable([index,key])}"/>
                 </td>
+                <td class="cell-counter border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text} {state.tableOptions.delete ? 'c-pointer':'' }">
+                    <input data-deletekey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.delete}" type="checkbox"/>
+                </td>
             </tr>
             <tr if="{state.mode=='post'}">
-                <td onclick="{applyPost}" class="cell-counter cell-post border-{border} bg-{bg} text-{text} c-pointer">
+                <td onclick="{applyPost}" class="cell-counter cell-post border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text} c-pointer">
                     <span class="badge badge-success">
                         ADD
                     </span>
                 </td>
                 <td if="{key in state.options && state.options[key].visible==true}" 
-                    each="{key in state.datakeys}">
+                    each="{key in state.datakeys}" class="{state.theme.matchContents ? 'border-'+state.theme.border : ''} {state.theme.matchContents ? 'bg-'+state.theme.bg : ''} {state.theme.matchContents ? 'text-'+state.theme.text : ''}">
                     <input  data-postkey="{key}" class="w-100" 
                             type="{ getInputType(state.options[key].type) }"  
                             onchange="{editPost}" value="{key in state.new ? state.new[key] : null}"/>
                 </td>
             </tr>
         </tbody>
-        <tfoot class="bg-{bg} text-{text}">
+        <tfoot class="bg-{state.theme.bg} text-{state.theme.text}">
             <tr>
                 <td class="cell-counter cell-counter-bottom c-pointer">
                     <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge badge-success">
@@ -77,6 +82,25 @@
                     <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}" href="#">&#8677;</button>
                     of {Math.ceil(state.data.length/state.pagination.show)}
                 </td>
+                <td class="footer-cell-control">
+                    <span onclick="{applyDelete}" if="{state.tableOptions.delete}" class="badge badge-danger c-pointer position-relative table-action">
+                        <span>X</span>
+                        <div class="toast position-absolute" >
+                            <div class="toast-header">
+                                <strong class="mr-auto">To Be Deleted</strong>
+                                <small>  Items</small>
+                            </div>
+                            <div class="toast-body text-muted row-header">
+                                The following items will be deleted
+                                <ul class="list-group mt-2">
+                                    <li class="list-group-item " each="{value in Object.values(state.delete)}">
+                                        { JSON.stringify(value) }
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </span>
+                </td>
             </tr>
         </tfoot>
     </table>
@@ -84,6 +108,19 @@
         table { 
             font-size:1rem;
             line-height:1.5rem;
+        }
+        
+        .table-action .toast{
+            
+            right:20px;
+            bottom:20px;
+        }
+        .table-action:hover .toast{
+            opacity:1;
+        }
+        .table-action .list-group {
+            max-height:40px;
+            overflow:auto;
         }
         .border-dark {
             border-color:#454d55 !important;
@@ -168,38 +205,9 @@
     <script>
         export default {
             state : {
-                data:[{
-                    "Id":1,
-                    "Name":"Ryan",
-                    "Age":27,
-                    "Email":"test@test.com",
-                    "Is":false
-                },{
-                    "Id":2,
-                    "Name":"Kiichi",
-                    "Age":null,
-                    "Email":"anothertest@test.com",
-                    "Is":true
-                },{
-                    "Id":3,
-                    "Name":"Justin",
-                    "Age":null,
-                    "Email":"testing123@test.com",
-                    "Is":false
-                },{
-                    "Id":4,
-                    "Name":"Korey",
-                    "Age":null,
-                    "Email":"information@test.com",
-                    "Is":false
-                },{
-                    "Id":5,
-                    "Name":"James",
-                    "Age":null,
-                    "Email":"testinformation@test.com",
-                    "Is":false
-                }],
+                data:[],
                 new:{},
+                delete:{},
                 path:[],
                 pathstr:"",
                 datakeys:[],
@@ -209,25 +217,57 @@
                     show:10,
                     page:1
                 },
-                sort:{},
                 callbacks:{},
                 options:{},
                 tableOptions:{},
-                mode:""
+                sort:{},
+                theme:{},
+                mode:"",
+                all:false
             },
             preventNextChange:false,
-            border:"dark",
-            bg:"dark",
-            text:"light",
-            matchContents:false,
             debugMode:true,
             debug:{
+                data:[
+                    {
+                        "Id":1,
+                        "Name":"Ryan",
+                        "Age":27,
+                        "Email":"test@test.com",
+                        "Is":false
+                    },{
+                        "Id":2,
+                        "Name":"Kiichi",
+                        "Age":null,
+                        "Email":"anothertest@test.com",
+                        "Is":true
+                    },{
+                        "Id":3,
+                        "Name":"Justin",
+                        "Age":null,
+                        "Email":"testing123@test.com",
+                        "Is":false
+                    },{
+                        "Id":4,
+                        "Name":"Korey",
+                        "Age":null,
+                        "Email":"information@test.com",
+                        "Is":false
+                    },{
+                        "Id":5,
+                        "Name":"James",
+                        "Age":null,
+                        "Email":"testinformation@test.com",
+                        "Is":false
+                    }
+                ],
+                callbacks:{},
                 options:{
                     "Id":{
                         alias:"UserID",
-                        visible:false,
                         pk:true,
-                        put:false
+                        put:false,
+                        visible:false
                     },
                     "Name":{
                         alias:"Involved Person"
@@ -242,27 +282,8 @@
                 tableOptions:{
                     post:true,
                     delete:true
-                }
-            },
-            defaults:{
-                callbacks:{
-                    put:(updated)=> console.log(updated),
-                    post:(created)=> console.log(created),
-                    delete:(deleted)=> console.log(deleted)
                 },
-                options:{
-                    alias:null,
-                    type:String,
-                    autotype:(value)=>{return value.constructor},
-                    visible:true,
-                    put:true,
-                    pk:false
-                },
-                tableOptions:{
-                    delete:true,
-                    post:true
-                },
-                typesort:{
+                typeSort:{
                     "String":(a,b)=>{
                         return a.localeCompare(b);
                     },
@@ -277,32 +298,76 @@
                     "Boolean":(a,b)=>{
                         return a-b;
                     }
+                },
+                theme:{
+                    bg:"light",
+                    border:"light",
+                    text:"dark",
+                    matchContents:true
+                }
+            },
+            defaults:{
+                data:[],
+                callbacks:{
+                    put:(updated)=> console.log(updated),
+                    post:(created)=> console.log(created),
+                    delete:(deleted)=> console.log(deleted)
+                },
+                options:{
+                    alias:null,
+                    type:String,
+                    autotype:(value)=>{return value.constructor},
+                    visible:true,
+                    put:true,
+                    pk:false,
+                    sort:null
+                },
+                tableOptions:{
+                    delete:true,
+                    post:true
+                },
+                typeSort:{
+                    "String":(a,b)=>{
+                        return a.localeCompare(b);
+                    },
+                    "Number":(a,b)=>{
+                        a=a==null?-Infinity:a;
+                        b=b==null?-Infinity:b;
+                        return parseFloat(a)-parseFloat(b);
+                    },
+                    "Date":(a,b)=>{
+                        return a-b;
+                    },
+                    "Boolean":(a,b)=>{
+                        return a-b;
+                    }
+                },
+                theme:{
+                    bg:"light",
+                    border:"light",
+                    text:"dark",
+                    matchContents:true
                 }
             },
             onBeforeMount(props,state){
                 props = this.debugMode ? this.debug : props;
-
-                window.onkeydown=(e)=>{
-                    this.controlModifier(e);
-                }
-                window.onkeyup=(e)=>{
-                    this.controlModifier(e);
-                }
+                window.onkeydown=(e)=>this.controlModifier(e);
+                window.onkeyup=(e)=>this.controlModifier(e);
+                
+                // set underlying table data
+                this.state.data = props.data || this.state.data;
 
                 // set initial data keys                
-                this.state.datakeys=Object.keys(this.state.data[0]);
+                this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(props.options) ;
 
-                // set underlying table data
-                this.state.data = props.data || this.state.data ;
-                
-                // set table operation callbacks
+                // set table operation callbacks - functions cannot use assign
                 let callbacks = Object.assign({},this.defaults.callbacks);
                 Object.keys(callbacks).forEach((callback)=>{
                     callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
                 });
                 this.state.callbacks=callbacks;
-
                 // set column options (autotype, typeoverride, visible, insert, update, delete, pk)
+                /* setting column options requires iterating through data's key, determinine generic autotype and overriding with users entered overrides via props */
                 this.state.datakeys.forEach((key)=>{
                     let columnOptions=Object.assign({},this.defaults.options);
                     
@@ -330,13 +395,16 @@
                 this.state.tableOptions = Object.assign({},this.defaults.tableOptions);
                 this.state.tableOptions = props.tableOptions ? Object.assign(this.state.tableOptions,props.tableOptions):this.state.tableOptions; 
 
-                // set typesort options
-                this.state.typesort = Object.assign({},this.defaults.typesort);
-                this.state.typesort = props.typesort ? Object.assign(this.state.typesort,props.typesort) : this.state.typesort;
+                // set typeSort options
+                this.state.typeSort = Object.assign({},this.defaults.typeSort);
+                this.state.typeSort = props.typeSort ? Object.assign(this.state.typeSort,props.typeSort) : this.state.typeSort;
                 
+                //set theme options
+                this.state.theme = Object.assign({},this.defaults.theme);
+                this.state.theme = props.theme ? Object.assign(this.state.theme,props.theme): this.state.theme;
+
                 this.state.pkidarr = this.getPKID();
                 this.state.pkidstr = this.state.pkidarr.join('-');
-
             },
             getPKID(){
                 let PKID = [];
@@ -404,8 +472,32 @@
                     };
                 }
             },
-            getDeleteKey(row){
+            getRowKey(row){
                 return this.state.pkidarr.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
+            },
+            parseColType(str,col){
+                let type=this.state.options[col].type;
+                if(type===Number){
+
+                    return str.type===String  ? parseFloat(str) : str;
+                }
+                else if(type===String){
+                    return str.type===String ? str : str + "";
+                }
+                else if(type===Date){
+                    return str;
+                }
+                else if(type===Boolean){
+                    return str=="true" || str == 1 ? true : false
+                }
+            },
+            parseRowKey(rowkey){
+                let rowkeyobj={};
+                rowkey.split("-").forEach((key)=>{
+                    let keypair = key.split("_");
+                    rowkeyobj[keypair[0]]=this.parseColType(keypair[1],keypair[0]);
+                });
+                return rowkeyobj;
             },
             setPage(e){
                 if(e.target.value<1){
@@ -422,6 +514,9 @@
                 this.state.pagination.page = 1;
                 this.update();
             },
+            getSelected(){
+                return Object.keys(this.state.delete);
+            },
             rowMenu(e){
                 if(this.state.tableOptions.delete){
                     if(e.target.getAttribute("style")==null){
@@ -437,6 +532,49 @@
                     }
                     this.update();
                 }
+            },
+            toggleAll(e){
+                if(this.state.all){
+                    this.state.all=false;
+                    this.state.delete={};
+                }
+                else{
+                    for(var i=0;i<this.state.data.length;i++){
+                        let rowpairkey = this.getRowKey(this.state.data[i]);
+                        let rowkeyobj = this.parseRowKey(rowpairkey);
+                        this.state.delete[rowpairkey]=rowkeyobj;
+                    }
+                    this.state.all=true;
+                }
+                this.update();
+            },
+            toggleRow(e){
+                let rowpairkey= e.target.getAttribute("data-deletekey");
+                let rowkeyobj=this.parseRowKey(rowpairkey);
+                if(rowpairkey in this.state.delete){
+                    //remove item
+                    this.state.all=false;
+                    delete this.state.delete[rowpairkey];
+                }
+                else{
+                    //add item (check if all selected)
+                    this.state.delete[rowpairkey]=rowkeyobj;
+                    if(Object.keys(this.state.delete).length== this.state.data.length){
+                        this.state.all=true;
+                    }
+                }
+                this.update();
+                /*  Inverse add logic
+                    let add = false;
+                    rowkeys.forEach((key)=>{
+                        if(this.state.data[i][key]!=rowkeyobj[key]){
+                            add=true;
+                        }
+                    });
+                    if(add){
+
+                    }
+                */
             },
             postMenu(e){
                 this.state.mode = this.state.mode=="post"?"":"post";
@@ -578,52 +716,74 @@
                     postbackPKIDObj[pkid]=null;
                 });
 
+                let confirmPost = (PKIDMergeObj)=>{
+                    this.state.data.push(Object.assign(postback,PKIDMergeObj));
+                    this.state.new={};
+                    this.update();
+                    return confirmPost;
+                }
+
+                if(this.debugMode){
+                    postbackPKID.forEach((pkcol)=>{
+                        postbackPKIDObj[pkcol] = this.uuidv4();
+                    });
+                } 
                 this.state.callbacks.post({
                     pkid:postbackPKID,
                     type:"post",
                     new:postback,
                     confirmContent:postbackPKIDObj,
-                    confirm:(PKIDMergeObj)=>{
-                        
-                        this.state.data.push(Object.assign(postback,PKIDMergeObj));
-                        this.state.new={};
-                        this.update();
-                    }
+                    confirm: ( this.debugMode ? confirmPost( postbackPKIDObj ) : confirmPost )
                 });
             },
             applyDelete(e){
-                let deletekey = {};
-                e.target.getAttribute("data-deletekey").split("-").forEach((key)=>{
-                    let keypair = key.split("_");
-                    deletekey[keypair[0]]=keypair[1];
-                })
-                e.target.removeAttribute("style");
+                let deletekeys=Object.keys(this.state.delete).map((key)=>this.state.delete[key]);
+
                 e.preventDefault();
                 e.stopPropagation();
-                this.state.callbacks.delete({
-                    old: deletekey,
-                    type:"delete",
-                    confirm:(result)=>{
+
+                let confirmdelete = (result,callback=(deleted,deletekeys)=>{ console.log("client side delete failed",deleted,deletekeys) })=>{
                         if(result){
+                            let deleted=[];
                             for(var i=0;i<this.state.data.length;i++){
-                                let match=true;
-                                Object.keys(deletekey).forEach((key)=>{
-                                    if(this.state.data[i][key]!=deletekey[key]){
-                                        let match=false;
+                                let match=false;
+                                deletekeys.forEach((deletekey)=>{
+                                    let keymatch=true;
+                                    Object.keys(deletekey).forEach((key)=>{
+                                        if(this.state.data[i][key]!=deletekey[key]){
+                                            keymatch=false;
+                                        }
+                                    })
+                                    if(keymatch){
+                                        match=true;
                                     }
-                                })
+                                });
                                 if(match){
+                                    deleted.push(this.state.data[i]);
                                     this.state.data.splice(i,1);
-                                    i=this.state.data.length;
-                                    this.update();
-                                    return;
+                                    i--;
                                 }
                             }
-                            console.log("client side delete failed");
+                            if(deleted.length!=deletekeys.length){
+                                callback(deleted,deletekeys);
+                            }
+                            this.update();
                         }
-                    }
+                        return confirmdelete;
+                    };
+
+                this.state.callbacks.delete({
+                    old: deletekeys,
+                    type:"delete",
+                    confirm: (this.debugMode ? confirmdelete(true) : confirmdelete)  
                 })
             },
+            uuidv4() {
+                return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                })
+            },  
             sort(key){
                 var numsorts = this.calcSortOrder();
                 let oldkey = key in this.state.sort && this.state.sort[key].type ? this.state.sort[key].type :"NONE";
@@ -673,7 +833,7 @@
                 function dimensionalSort(dimensionalsorts, dimensionalindex=0,a,b){
                     if(dimensionalindex<dimensionalsorts.length){
                         let key=dimensionalsorts[dimensionalindex];
-                        let sortresult=thisref.state.typesort[thisref.state.options[key].type.name](a[key],b[key]);
+                        let sortresult=thisref.state.typeSort[thisref.state.options[key].type.name](a[key],b[key]);
                         sortresult = thisref.state.sort[key].type=="ASC" ? sortresult : -1 * sortresult;
                         dimensionalindex++
                         return sortresult==0 ? dimensionalSort(dimensionalsorts,dimensionalindex,a,b) : sortresult;
