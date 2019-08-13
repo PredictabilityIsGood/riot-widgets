@@ -1,13 +1,13 @@
-#Riot-Widgets
+# Riot-Widgets
 
 [demo](https://predictabilityisgood.github.io/riot-widgets/)
 
-##Include
+## Include
 ```javascript
 <script src="widgets/widget-grid.html" type="riot"></script>
 ```
 
-##Mount
+## Mount
 ```javascript
 riot.mount("widget-grid", 
     {
@@ -90,7 +90,7 @@ riot.mount("widget-grid",
     });
 ```
 
-##Use
+## Use
 ```html
 <widget-grid { ...attributes }></widget-grid>
 ```
