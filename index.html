@@ -14,10 +14,25 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    <title>Riot Table Kitchen Sink</title>
+    <title>Riot Widgets</title>
   </head>
   <body>
-    <widget-grid { ...attributes }></widget-grid>
+    <div class="fluid-container">
+      <div class="jumbotron jumbotron-fluid m-4">
+        <div class="container">
+          <h1 class="display-4 text-center text-muted">< widget-grid ></h1>
+          <hr class="my-4">
+          <div class="card w-100">
+            <div class="card-header d-none">
+              Incidents
+            </div>
+            <widget-grid { ...attributes }></widget-grid>
+          </div>
+          <hr class="my-4">
+          
+        </div>
+      </div>
+    </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     
