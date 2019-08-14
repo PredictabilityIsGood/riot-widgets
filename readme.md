@@ -3,9 +3,11 @@
 [demo](https://predictabilityisgood.github.io/riot-widgets/)
 
 ## Tested Compatibility (> denotes requirement due to browser issues)
-Chrome      =   v75.0.3770.142
-Edge        =   v44.18362.1.0
-Firefox     >=  v68.0a1 [input type="Number" blur engine bug in previous versions](https://hg.mozilla.org/mozilla-central/rev/ee8e96e5d015)
+Browser Name    |   Testing Notes          |    Browser Bug Notes
+---             |  ---                     |    ---
+Chrome          |   =   v75.0.3770.142     |
+Edge            |   =   v44.18362.1.0      |
+Firefox         |   >=  v68.0a1            | [input type="Number" blur engine bug in previous versions](https://hg.mozilla.org/mozilla-central/rev/ee8e96e5d015)
 
 ## Include
 ```html
