@@ -247,7 +247,7 @@
                 all:false
             },
             preventNextChange:false,
-            debugMode:false,
+            debugMode:true,
             debug:{
                 data:[
                     {
@@ -386,11 +386,12 @@
                     matchContents:true
                 }
             },
+            windowkeyup:null,
+            windowkeydown:null,
             onBeforeMount(props,state){
                 props = this.debugMode ? this.debug : props;
-                window.onkeydown=(e)=>this.controlModifier(e);
-                window.onkeyup=(e)=>this.controlModifier(e);
-                
+                this.windowkeyup = window.addEventListener("keyup",(e)=>this.controlModifier(e));
+                this.windowkeydown = window.addEventListener("keydown",(e)=>this.controlModifier(e));
                 // set underlying table data
                 this.state.data = props.data || this.state.data;
 
@@ -442,6 +443,10 @@
 
                 this.state.pkidarr = this.getPKID();
                 this.state.pkidstr = this.state.pkidarr.join('-');
+            },
+            onBeforeUnmount(){
+                window.removeEventListener(this.windowkeyup);
+                window.removeEventListener(this.windowkeydown);
             },
             getPKID(){
                 let PKID = [];
