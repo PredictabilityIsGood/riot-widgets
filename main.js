@@ -1,7 +1,7 @@
 (async function main(){
     await riot.compile();
     console.log("compilation done");
-    
+
     riot.mount("widget-grid", 
     {
         data:[
@@ -65,7 +65,15 @@
             "Number":(a,b)=>{
                 a=a==null?-Infinity:a;
                 b=b==null?-Infinity:b;
-                return parseFloat(a)-parseFloat(b);
+                let result = parseFloat(a)-parseFloat(b);
+                if(isNaN(result)){
+                    return 0;
+                }
+                else{
+                    result=result==-Infinity?-1:result;
+                    result=result==Infinity?1:result;
+                    return result;
+                }
             },
             "Date":(a,b)=>{
                 return a-b;

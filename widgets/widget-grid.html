@@ -289,7 +289,15 @@
                     "Number":(a,b)=>{
                         a=a==null?-Infinity:a;
                         b=b==null?-Infinity:b;
-                        return parseFloat(a)-parseFloat(b);
+                        let result = parseFloat(a)-parseFloat(b);
+                        if(isNaN(result)){
+                            return 0;
+                        }
+                        else{
+                            result=result==-Infinity?-1:result;
+                            result=result==Infinity?1:result;
+                            return result;
+                        }
                     },
                     "Date":(a,b)=>{
                         return a-b;
@@ -332,7 +340,15 @@
                     "Number":(a,b)=>{
                         a=a==null?-Infinity:a;
                         b=b==null?-Infinity:b;
-                        return parseFloat(a)-parseFloat(b);
+                        let result = parseFloat(a)-parseFloat(b);
+                        if(isNaN(result)){
+                            return 0;
+                        }
+                        else{
+                            result=result==-Infinity?-1:result;
+                            result=result==Infinity?1:result;
+                            return result;
+                        }
                     },
                     "Date":(a,b)=>{
                         return a-b;
@@ -586,7 +602,7 @@
                     );
             },
             control(e){
-                if(e.code == "Tab" || e.code =="ArrowDown"){
+                if(e.key == "Tab" || e.key =="ArrowDown"){
                     e.preventDefault();
                 }
                 let datakeys=this.state.datakeys;
@@ -605,7 +621,7 @@
                     rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
                     curkeyindex=0;
                 }
-                if(e.code == "Tab"){
+                if(e.key == "Tab"){
                     this.applyPut(e,true);
                     if(this.state.shiftmodifier){
                         if(curkeyindex==0){
@@ -627,22 +643,22 @@
                     curpath[keypathindex]=datakeys[curkeyindex];
                     this.editState(curpath,true);
                 }
-                if(e.code == "Enter" || e.code == "ArrowDown") {
+                if(e.key == "Enter" || e.key == "ArrowDown") {
                     this.applyPut(e,true);
                     rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
                     this.editState(curpath,true)
                 }
-                if(e.code == "ArrowUp"){
+                if(e.key == "ArrowUp"){
                     this.applyPut(e,true);
                     rowindex == 0 ? curpath[rowpathindex] = this.state.data.length-1 : curpath[rowpathindex]--;
                     this.editState(curpath,true);
                 }
-                if(e.code == "Escape"){
+                if(e.key == "Escape"){
                     this.editState([]);
                 }
             },
             controlModifier(e){
-                if(e.code=="ShiftLeft"){
+                if(e.key=="Shift"){
                     if(e.type=="keydown"){
                         this.state.shiftmodifier=true;
                     }
@@ -839,7 +855,7 @@
                         let key=dimensionalsorts[dimensionalindex];
                         let sortresult=thisref.state.typeSort[thisref.state.options[key].type.name](a[key],b[key]);
                         sortresult = thisref.state.sort[key].type=="ASC" ? sortresult : -1 * sortresult;
-                        dimensionalindex++
+                        dimensionalindex++;
                         return sortresult==0 ? dimensionalSort(dimensionalsorts,dimensionalindex,a,b) : sortresult;
                     }
                     return 0;
