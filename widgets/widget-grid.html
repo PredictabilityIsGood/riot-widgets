@@ -41,8 +41,8 @@
             </tr>
             <tr if="{state.mode=='post'}">
                 <td onclick="{applyPost}" class="cell-counter cell-post border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text} c-pointer">
-                    <span class="badge badge-success">
-                        ADD
+                    <span class="badge badge-secondary">
+                        new
                     </span>
                 </td>
                 <td if="{key in state.options && state.options[key].visible==true}" 
@@ -57,35 +57,46 @@
         </tbody>
         <tfoot class="bg-{state.theme.bg} text-{state.theme.text}">
             <tr>
-                <td class="cell-counter cell-counter-bottom c-pointer">
+                <td class="footer-cell-control border-0" 
+                    colspan="1">
+                    <span class="badge badge-secondary c-pointer d-none">
+                        <div class="rotate-45 bigger">
+                            &#9906;
+                        </div>
+                    </span>
+                </td>
+                <td class="footer-cell-control" 
+                    colspan="{state.datakeys.length-2}">
+                    <span>
+                        <select onchange="{setPageCount}">
+                            <option val="1">1</option>
+                            <option val="10" selected>10</option>
+                            <option val="25">25</option>
+                            <option val="50">50</option>
+                            <option val="100">100</option>
+                        </select>
+                    </span>
+                    <span class="ml-3">
+                        <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="1">&#8676;</button>
+                        <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
+                        page
+                        <input class="footer-cell-control-page-input" type="number" value="{state.pagination.page}" onchange="{setPage}">
+                        <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{state.pagination.page+1}">{state.pagination.page+1}</button>
+                        <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}">&#8677;</button>
+                        of { state.pagination.max }
+                    </span>
+                    <span class="ml-3">
+                        displaying {state.pagination.start+1} to { state.data.length < state.pagination.end-1 ? state.data.length : state.pagination.end-1 } of { state.data.length }
+                    </span>
+                </td>
+                <td class="cell-counter cell-counter-bottom c-pointer text-right">
                     <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge badge-success">
                         <span if="{state.mode!='post'}">+</span>
                         <span if="{state.mode=='post'}">x</span>
                     </span>
                 </td>
-                <td class="footer-cell-control" 
-                    colspan="1">
-                    show
-                    <select onchange="{setPageCount}">
-                        <option val="1">1</option>
-                        <option val="10" selected>10</option>
-                        <option val="25">25</option>
-                        <option val="50">50</option>
-                        <option val="100">100</option>
-                    </select>
-                </td>
-                <td class="footer-cell-control" 
-                    colspan="{state.datakeys.length-2}">
-                    page
-                    <button class="footer-pagination-button" if="{state.pagination.page>1}" onclick="{setPage}" value="1" href="#">&#8676;</button>
-                    <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
-                    <input class="footer-cell-control-page-input" type="number" value="{state.pagination.page}" onchange="{setPage}">
-                    <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{state.pagination.page+1}">{state.pagination.page+1}</button>
-                    <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}" href="#">&#8677;</button>
-                    of {Math.ceil(state.data.length/state.pagination.show)}
-                </td>
-                <td class="footer-cell-control">
-                    <span onclick="{applyDelete}" if="{state.tableOptions.delete}" class="badge badge-danger c-pointer position-relative table-action">
+                <td class="cell-counter cell-counter-bottom">
+                    <span onclick="{applyDelete}" if="{state.tableOptions.delete && state.deletecnt > 0}" class="badge badge-danger c-pointer position-relative table-action">
                         <span>X</span>
                         <div class="toast position-absolute d-none" >
                             <div class="toast-header">
@@ -187,6 +198,13 @@
             transform: rotateZ(-90deg); /* Standard syntax */
             font-size:.8rem;
         }
+        .rotate-45{
+            -webkit-transform: rotateZ(45deg); /* Safari prior 9.0 */
+            transform: rotateZ(45deg); /* Standard syntax */
+        }
+        .bigger {
+            font-size:.9rem;
+        }
         .c-pointer{
             cursor:pointer;
         }
@@ -207,6 +225,7 @@
                 data:[],
                 new:{},
                 delete:{},
+                deletecnt:0,
                 path:[],
                 pathstr:"",
                 datakeys:[],
@@ -214,7 +233,10 @@
                 tabbed:false,
                 pagination:{
                     show:10,
-                    page:1
+                    page:1,
+                    start:0,
+                    end:10,
+                    max:1,
                 },
                 callbacks:{},
                 options:{},
@@ -517,17 +539,22 @@
             setPage(e){
                 if(e.target.value<1){
                     this.state.pagination.page=1;
-                    this.update();
+                    this.state.pagination.start = (this.state.pagination.show*0);
+                    this.state.pagination.end = (this.state.pagination.show*1);
+                    this.state.pagination.max = Math.ceil(this.state.data.length/this.state.pagination.show);
                 }
                 else{
-                    this.state.pagination.page=parseInt(e.target.value);
-                    this.update();
+                    this.state.pagination.page = parseInt(e.target.value);
+                    this.state.pagination.start = (this.state.pagination.show*(this.state.pagination.page))-this.state.pagination.show;
+                    this.state.pagination.end = (this.state.pagination.show*this.state.pagination.page)+1;
+                    this.state.pagination.max = Math.ceil(this.state.data.length/this.state.pagination.show);
                 }
+                this.update();
             },
             setPageCount(e){
-                this.state.pagination.show = e.target.value;
-                this.state.pagination.page = 1;
-                this.update();
+                this.state.pagination.show = parseInt(e.target.value);
+                let mockevent = {target:{value:"1"}};
+                this.setPage(mockevent);
             },
             getSelected(){
                 return Object.keys(this.state.delete);
@@ -552,6 +579,7 @@
                 if(this.state.all){
                     this.state.all=false;
                     this.state.delete={};
+                    this.state.deletecnt=0;
                 }
                 else{
                     for(var i=0;i<this.state.data.length;i++){
@@ -560,6 +588,7 @@
                         this.state.delete[rowpairkey]=rowkeyobj;
                     }
                     this.state.all=true;
+                    this.state.deletecnt=this.state.data.length;
                 }
                 this.update();
             },
@@ -578,6 +607,7 @@
                         this.state.all=true;
                     }
                 }
+                this.state.deletecnt=Object.keys(this.state.delete).length;
                 this.update();
                 /*  Inverse add logic
                     let add = false;
@@ -597,9 +627,9 @@
             },
             isVisible(rowIndex){
                 return (
-                        rowIndex+1 > (this.state.pagination.show*(this.state.pagination.page-1)) &&
-                        rowIndex+1 < (this.state.pagination.show*this.state.pagination.page)+1
-                    );
+                    rowIndex+1 > this.state.pagination.start &&
+                    rowIndex+1 < this.state.pagination.end
+                );
             },
             control(e){
                 if(e.key == "Tab" || e.key =="ArrowDown"){
