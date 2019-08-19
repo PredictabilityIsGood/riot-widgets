@@ -1,0 +1,74 @@
+<widget-tree>
+<div>
+
+</div>
+<script>
+export default {
+state:{
+ data:[{
+  MenuID:1,
+  Name:"About",
+  RelatedID:null
+ },{
+  MenuID:2,
+  Name:"Team",
+  RelatedID:1
+ },{
+  MenuID:3,
+  Name:"Mission",
+  RelatedID:1
+ },{
+  MenuID:4,
+  Name:"Products",
+  RelatedID:null
+ },{
+  MenuID:5,
+  Name:"Refrigerator",
+  RelatedID:4
+ },{
+  MenuID:6,
+  Name:"Services",
+  RelatedID:4
+ }],
+ implicitData:{
+  ImpTreeID:null,
+  
+ },
+ dataType:"relational",
+ relational:{
+ 
+ },
+ implicitTree:{
+ 
+ },
+ explicitTree:{
+ 
+ },
+ options:{
+  MenuID:{
+   pk:true,
+  },
+  Name:{
+   content:true,
+   html:false
+  },
+  RelatedID:{
+   fk:true,
+   fkconnect:"Menu"
+  }
+ }
+ 
+ 
+},
+debugMode:true,
+defaults:{
+ dataType:
+},
+onBeforeMounted(props,status){
+
+}
+relationalToImplicit
+
+}
+</script>
+</widget-tree>
