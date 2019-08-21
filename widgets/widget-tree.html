@@ -1,74 +1,647 @@
 <widget-tree>
-<div>
+    <div class="list-group list-group-sm p-2 mini-tree">
+        <div class="row" each="{item in state.structuredData}" if="{item['widget-tree-branch-show']}">
+            <div class="col text-right tree-button-join "
+                style="max-width:6%;width:6%;margin-left:{(item['widget-tree-branch-path'].length-2)}%;z-index:9">
+                <button if="{hasChildren(item)}" onclick="{()=>{toggleBranch(item)}}" 
+                        type="button" class="pl-1 btn btn-sm btn-outline-default edged"
+                        style="max-width:100%;overflow:hidden;max-height:95%;">
+                    <span if="{item['widget-tree-branch-collapse']}">-</span>
+                    <span if="{!item['widget-tree-branch-collapse']}">+</span>
+                </button>
+            </div>
+            <div id="{getRowKey(item)}" 
+                class="col tree-content-join"
+                onmouseenter="{hovered}"
+                style="max-width:{94-(item['widget-tree-branch-path'].length)}%">
+                <button type="button" 
+                        class="list-group-item list-group-item-action edged tree-item  tree-node-placement-{ item['widget-tree-hover'] == '' ? 'none' : item['widget-tree-hover'] }">
+                    <span each="{col in state.contentcols}" onclick="{()=>{ putItem(item) }}">
+                            {item[col]}
+                    </span>
+                    <span class="badge badge-secondary float-right tree-control" onmousedown="{drag}" onmouseup="{drop}">
+                        &#x21f5;
+                    </span>
+                    <span class="badge badge-danger float-right tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
+                        X
+                    </span>
+                    <span class="badge badge-success float-right tree-control tree-control-thick" onclick="{()=>{ postItem(item) }}">
+                        +
+                    </span>
+                </button>
+                <widget-grid if="{item['widget-tree-widget-grid']}" { ...gridProps() }></widget-grid>
+            </div>       
+        </div>
+        <div class="d-none drag-overlay position-absolute w-100 h-100">
 
-</div>
-<script>
-export default {
-state:{
- data:[{
-  MenuID:1,
-  Name:"About",
-  RelatedID:null
- },{
-  MenuID:2,
-  Name:"Team",
-  RelatedID:1
- },{
-  MenuID:3,
-  Name:"Mission",
-  RelatedID:1
- },{
-  MenuID:4,
-  Name:"Products",
-  RelatedID:null
- },{
-  MenuID:5,
-  Name:"Refrigerator",
-  RelatedID:4
- },{
-  MenuID:6,
-  Name:"Services",
-  RelatedID:4
- }],
- implicitData:{
-  ImpTreeID:null,
-  
- },
- dataType:"relational",
- relational:{
- 
- },
- implicitTree:{
- 
- },
- explicitTree:{
- 
- },
- options:{
-  MenuID:{
-   pk:true,
-  },
-  Name:{
-   content:true,
-   html:false
-  },
-  RelatedID:{
-   fk:true,
-   fkconnect:"Menu"
-  }
- }
- 
- 
-},
-debugMode:true,
-defaults:{
- dataType:
-},
-onBeforeMounted(props,status){
+        </div>
+    </div>
+    <style>
+        .mini-tree{
+            font-size:.8em !important;
+        }
+        .edged {
+            border-radius:0 !important;
+        }
+        .tree-item{
+            margin-top:-1px;
+            padding:.4rem;
+        }
+        .tree-button-join {
+            padding-right:0;
+        }
+        .tree-content-join {
+            padding-left:2px;
+        }
+        .tree-content-join .tree-control{
+            display:none;
+        }
+        .tree-content-join:hover .tree-control{
+            display:inline;
+        }
+        .tree-control {
+            font-size: .9em;
+            font-weight:300;
+            margin:.125rem;
+        }
+        .tree-control-thick {
+            font-weight:600;
+        }
+        .tree-control-skinny {
+            font-weight:100;
+        }
+        .tree-node-placement-next{
+            z-index:2;
+            box-shadow:0px 5px 0px firebrick;
+        }
+        .tree-node-placement-prev{
+            z-index:2;
+            box-shadow:0px -5px 0px firebrick;
+        }
+        .tree-node-placement-in{
+            z-index:2;
+            box-shadow:0px 0px 3px firebrick;
+        }
+    </style>
+    <script>
+    export default {
+        state:{
+            data:[],
+            structuredData:[],
+            toTreeQueue:[],
+            options:{},
+            gridAttr:{
+                props:{},
+                overrides:{
+                    
+                    tableOptions:{
+                        delete:false,
+                        pagination:false,
+                        footer:false,
+                    },
+                    options:{
+                        "widget-tree-branch-path":{
+                            "visible":false,
+                        },
+                        "widget-tree-branch-show":{
+                            "visible":false
+                        },
+                        "widget-tree-branch-collapse":{
+                            "visible":false
+                        },
+                        "widget-tree-widget-grid":{
+                            "visible":false
+                        },
+                        "widget-tree-start":{
+                            "visible":false
+                        },
+                        "widget-tree-hover":{
+                            "visible":false
+                        }
+                    },
+                    callbacks:{
+                        put:null
+                    }
+                }
+            },
+            treeMode:"",
+            dragging:false,
+        },
+        debug:{
+            data:[{
+                MenuID:1,
+                Name:"About",
+                RelatedID:null
+            },{
+                MenuID:2,
+                Name:"Team",
+                RelatedID:1
+            },{
+                MenuID:10,
+                Name:"Kiichi",
+                RelatedID:2
+            },{
+                MenuID:11,
+                Name:"Ryan",
+                RelatedID:2
+            },{
+                MenuID:12,
+                Name:"Justin",
+                RelatedID:2
+            },{
+                MenuID:3,
+                Name:"Mission",
+                RelatedID:1
+            },{
+                MenuID:4,
+                Name:"Products",
+                RelatedID:null
+            },{
+                MenuID:5,
+                Name:"Refrigerator",
+                RelatedID:4
+            },{
+                MenuID:6,
+                Name:"AC Unit",
+                RelatedID:4
+            },{
+                MenuID:7,
+                Name:"Commercial",
+                RelatedID:6
+            },{
+                MenuID:8,
+                Name:"Residential",
+                RelatedID:6
+            },{
+                MenuID:9,
+                Name:"Hybrid",
+                RelatedID:6
+            }],
+            options:{
+                MenuID:{
+                    pk:true
+                },
+                Name:{
+                    content:true,
+                    html:false
+                },
+                RelatedID:{
+                    fk:"MenuID"
+                }
+            }
+        },
+        debugMode:true,
+        defaults:{
+            callbacks:{
+                put:(updated)=> console.log(updated),
+                post:(created)=> console.log(created),
+                delete:(deleted)=> console.log(deleted)
+            },
+            options:{
+                alias:null,
+                type:String,
+                autotype:(value)=>{return value.constructor},
+                visible:true,
+                put:true,
+                pk:false,
+                content:false,
+                html:false,
+                fk:"",
+                sort:null
+            },
+        },
+        onBeforeMount(props,status){
+            props = this.debugMode ? this.debug : props;
+            this.state.gridAttr.props=Object.assign({},props);
+            window.addEventListener("mousemove",this.mouseMove);
+            window.addEventListener("mousedown",this.startDrag);
+            window.addEventListener("mouseup",this.stopDrag);
 
-}
-relationalToImplicit
+            // set underlying table data
+            this.state.data = props.data || this.state.data ;
 
-}
-</script>
+            // set initial data keys                
+            this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(props.options) ;
+            
+            //set column defaults
+            this.state.datakeys.forEach((key)=>{
+                let columnOptions=Object.assign({},this.defaults.options);
+                
+                Object.keys(columnOptions).forEach((optionname)=>{
+                    columnOptions[optionname] = props.options[key] && optionname in props.options[key] ? props.options[key][optionname] : columnOptions[optionname];
+                });
+
+                if(!(key in props.options) || !props.options[key].type ){
+                    let i=0; //search until first auto-type is found for col not null
+                    let autotype=null;
+                    while(autotype==null && i<this.state.data.length){
+                        if(this.state.data[i][key]!=null){
+                            columnOptions.autotype=columnOptions.autotype(this.state.data[i][key]);
+                            autotype=true;
+                        }
+                        i++;
+                    }
+                    columnOptions.type=columnOptions.autotype;
+                }
+                
+                this.state.options[key] = columnOptions; // set column options
+            });
+            
+            //set callback defaults
+            let callbacks = Object.assign({},this.defaults.callbacks);
+            Object.keys(callbacks).forEach((callback)=>{
+                callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
+            });
+
+            this.state.callbacks=callbacks;
+            
+            this.buildTree();
+            
+        },
+        onBeforeUnmount(){
+            if(this.mouseMove){
+                window.removeEventListener("mouseup",this.stopDrag);
+                window.removeEventListener("mousedown",this.startDrag);
+                window.removeEventListener("mousemove",this.mouseMove);
+            }
+            else{
+                console.log(this.mouseMove,"keyevents wiped prior to app mount");
+            }
+        },
+        buildTree(){
+            this.state.pkcols=[];
+            this.state.fkcols=[];
+            this.state.contentcols=[];
+            //find primary key columns
+            grul.atMeta(this.state.options,[Object],(colOpt,meta,lit)=>{
+                if(colOpt.pk){
+                    this.state.pkcols.push(lit[0]);
+                    grul.atMeta(this.state.options,[Object,"fk"],(fkDef,fkmeta,fklit)=>{
+                        fkDef==lit[0] ? this.state.fkcols.push(fklit[0]) : 0 ;
+                    });
+                    this.state.pkcols.length==this.state.fkcols.length ? 0 : this.state.fkcols.push(null);
+                } 
+                if(colOpt.content){
+                    this.state.contentcols.push(lit[0]);
+                }
+            });
+            this.state.toTreeQueue=JSON.parse(JSON.stringify(this.state.data));
+            let tree = {
+                compound:"root",
+                children:[],
+            };
+            let TreeIFY = (treequeue,parent=null,compoundLiteralPath=[])=>{
+                grul.atMeta(treequeue,[Array],(o,meta,lit)=>{
+                    if(parent==null){
+                        let rootNode = true;
+                        this.state.fkcols.forEach((key)=>{
+                            if(o[key]!=null){
+                                rootNode = false;
+                            }
+                        });
+                        if(rootNode){
+                            let data = treequeue[lit[0]];
+                            let compound = this.state.pkcols.map((key)=>{
+                                return o[key]
+                            })
+                            tree.children.push({
+                                compound:compound,
+                                data:data,
+                                children:[],
+                            });
+                            let newCompoundLiteralPath=JSON.parse(JSON.stringify(compoundLiteralPath));
+                            newCompoundLiteralPath.push(compound);
+                            TreeIFY(treequeue,o,newCompoundLiteralPath);
+                        }
+                    }
+                    else{
+                        let isChild = true;
+                        this.state.fkcols.forEach((key,index)=>{
+                            if(o[key] != parent[this.state.pkcols[index]]){
+                                isChild = false;
+                            }
+                        });
+                        if(isChild){
+                            let data = treequeue[lit[0]];
+                            let compound = this.state.pkcols.map((key)=>{
+                                return o[key];
+                            });
+                            grul.atPattern(tree,["children",Array],{"head":(treeobj)=>{
+                                if(JSON.stringify(treeobj.compound)==JSON.stringify(compoundLiteralPath[compoundLiteralPath.length-1])){
+                                    treeobj.children.push({
+                                        compound:compound,
+                                        data:data,
+                                        children:[],
+                                    });
+                                }
+                            }});
+                            let newCompoundLiteralPath=JSON.parse(JSON.stringify(compoundLiteralPath));
+                            newCompoundLiteralPath.push(compound);
+                            TreeIFY(treequeue,o,newCompoundLiteralPath);
+                        }
+                    }
+                });
+            };
+            TreeIFY(this.state.toTreeQueue);
+            this.state.structuredData=[];
+            grul.atPattern(tree,["children",Array],{ "head":(item,meta,lit)=>{
+                let row  = item.data
+                row["widget-tree-branch-path"] = lit;
+                row["widget-tree-branch-show"] = true;
+                row["widget-tree-branch-collapse"] = true;
+                row["widget-tree-widget-grid"] = false;
+                row["widget-tree-start"] = false;
+                row["widget-tree-hover"] = "";
+                this.state.structuredData.push(row);
+            }})
+            this.state.widgetTree=tree;
+            this.state.gridAttr.options;
+        },
+        hasChildren(item){
+            return grul.pluck(this.state.widgetTree,item['widget-tree-branch-path']).children.length>0
+        },
+        toggleBranch(item){
+            let start=grul.pluck(this.state.widgetTree,item['widget-tree-branch-path']);
+            if(start.data["widget-tree-branch-collapse"]){
+                grul.atPattern(start,["children",Array],{
+                    "head":(item,meta,lit)=>{
+                        this.state.structuredData.forEach((row)=>{
+                            let matches=true;
+                            this.state.pkcols.forEach((pkcol)=>{
+                                if(row[pkcol]!=item.data[pkcol]){
+                                    matches=false;
+                                }
+                            });
+                            matches ? row['widget-tree-branch-show'] = false : 0 ;
+                        });
+                    }
+                });
+            }
+            else{
+                grul.atPattern(start,["children",Array],{
+                    "head":(item,meta,lit)=>{
+                        this.state.structuredData.forEach((row)=>{
+                            let matches=true;
+                            this.state.pkcols.forEach((pkcol)=>{
+                                if(row[pkcol]!=item.data[pkcol]){
+                                    matches=false;
+                                }
+                            });
+                            matches ? row['widget-tree-branch-show'] = true : 0 ;
+                        });
+                    }
+                });
+            }
+            start.data["widget-tree-branch-collapse"] = !start.data["widget-tree-branch-collapse"];
+            this.update();
+        },
+        putItem(item){
+            this.state.gridAttr.props.data=[item];
+            item['widget-tree-widget-grid'] = !item['widget-tree-widget-grid'];
+            this.update();
+        },
+        postItem(item){
+            this.state.gridAttr.data=[item.data];
+            item['widget-tree-widget-grid'] = !item['widget-tree-widget-grid'];
+            this.update();
+        },
+        deleteItem(item){
+            this.state.gridAttr.data=[item.data];
+            item['widget-tree-widget-grid'] = !item['widget-tree-widget-grid'];
+            this.update();
+        },
+        getNodeHitByPosition(x,y){
+            let elementsOver = document.elementsFromPoint(x,y);
+            let nodeEl=null;
+            elementsOver.forEach((el)=>{
+                if(el.getAttribute("class") && el.getAttribute("class").indexOf("tree-content-join")>-1){
+                    nodeEl=el;
+                }
+            });
+            return nodeEl;
+        },
+        getRowByEl(el){
+            return this.getRows(this.parseRowKey(el.getAttribute("id")))[0]
+        },
+        getRowKey(row){
+            return this.state.pkcols.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
+        },
+        parseRowKey(rowkey){
+            let rowkeyobj={};
+            rowkey.split("-").forEach((key)=>{
+                let keypair = key.split("_");
+                rowkeyobj[keypair[0]]=this.parseColType(keypair[1],keypair[0]);
+            });
+            return rowkeyobj;
+        },
+        parseColType(str,col){
+            let type=this.state.options[col].type;
+            if(type===Number){
+                return str.type===String  ? parseFloat(str) : str;
+            }
+            else if(type===String){
+                return str.type===String ? str : str + "";
+            }
+            else if(type===Date){
+                return str;
+            }
+            else if(type===Boolean){
+                return str=="true" || str == 1 ? true : false
+            }
+        },
+        getRows(selector){
+            let selected=[];
+            this.state.structuredData.forEach((row)=>{
+                let match=true;
+                Object.keys(selector).forEach((key)=>{
+                    if(selector[key]!=row[key]){
+                        match=false;
+                    }
+                })
+                match ? selected.push(row) : 0 ;
+            });
+            return selected;
+        },
+        hitZone(e,el){
+            let eloffsets = this.cumulativeOffset(el);
+            let hitoffsets = { left: e.pageX, top:e.pageY };
+            let hiteloffsets = { left: hitoffsets.left-eloffsets.left, top:hitoffsets.top-eloffsets.top};
+            
+            let elheight = el.offsetHeight;
+            let elwidth = el.offsetWidth;
+
+            if(hiteloffsets.top < (elheight * .325) ){
+                return "prev";
+            }
+            else if(hiteloffsets.top < (elheight * .625)){
+                return "in";
+            }
+            else{
+                return "next";
+            }
+        },
+        cumulativeOffset(el){
+            var x = 0;
+            var y = 0;
+            var cur = (el) ? el : this;
+            do
+            {
+                if (cur.nodeName.toLowerCase != 'td')
+                {
+                    x += cur.offsetLeft;
+                    y += cur.offsetTop;
+                }
+            }
+            while ((cur = cur.offsetParent) && cur.nodeName.toLowerCase() != 'body');   
+        
+            return { left: x, top: y };
+        },
+        gridProps(){
+            this.state.gridAttr.overrides.callbacks.put = (data)=>{
+                this.state.callbacks.put(data);
+                this.state.structuredData.forEach((row)=>{
+                    if(JSON.stringify(row)==JSON.stringify(data.old)){
+                        row=data.new;
+                    }
+                });
+                this.state.data=this.state.structuredData;
+                this.buildTree();
+                this.update();
+            }
+            var newProps = Object.assign({},this.state.gridAttr.props,this.state.gridAttr.overrides);
+            this.state.pkcols.forEach((key,index)=>{
+                
+                if(!(this.state.pkcols[index] in newProps.options)){
+                    newProps.options[this.state.pkcols[index]]={};
+                }
+                if(!(this.state.fkcols[index] in newProps.options)){
+                    newProps.options[this.state.fkcols[index]]={};
+                }
+                newProps.options[this.state.pkcols[index]].visible=false;
+                newProps.options[this.state.fkcols[index]].visible=false;
+
+            });
+            newProps.path=[0,this.state.contentcols[0]];
+            return newProps;
+        },
+        mouseMove(e){
+            if(this.state.dragging){ 
+                let nodeEl=this.getNodeHitByPosition(e.pageX,e.pageY)
+                if(nodeEl!=null){
+                    let hoverrow=this.getRowByEl(nodeEl);
+                    let pathstr=null;
+                    this.state.structuredData.forEach((row)=>{
+                        if(row["widget-tree-start"]){
+                            pathstr = row["widget-tree-branch-path"].join("-");
+                        }
+                        row["widget-tree-hover"] = "";
+                    })
+                    if(hoverrow["widget-tree-branch-path"].join("-").indexOf(pathstr)==0){
+                        this.state.structuredData.forEach((row)=>{
+                            row["widget-tree-hover"] = "";
+                        });
+                    }
+                    else{
+                        hoverrow["widget-tree-hover"] = this.hitZone(e,nodeEl);
+                    }
+                    this.update();
+                }
+                else{
+                    //check position relative to widget container
+                }
+            }
+        },
+        startDrag(e){
+            let startDragEl=this.getNodeHitByPosition(e.pageX,e.pageY);
+            if(startDragEl!=null){
+                this.state.structuredData.forEach((row)=>{
+                    row["widget-tree-start"] = false;
+                })
+                let row=this.getRowByEl(startDragEl);
+                row["widget-tree-start"] = true;
+                this.state.dragging=true;
+                this.update();
+            }
+        },
+        stopDrag(e){
+            let stopDragEl=this.getNodeHitByPosition(e.pageX,e.pageY);
+            if(this.state.dragging==true){
+                if(stopDragEl==null){
+                    this.state.structuredData.forEach((row)=>{
+                        row["widget-tree-hover"] = "";
+                        row["widget-tree-start"] = false;
+                    })
+                    this.state.dragging=false;
+                    this.update();
+                }
+                else{
+                    let placementrow=this.getRowByEl(stopDragEl);
+                    let placementrowindex=null;
+                    let placementzone = this.hitZone(e,stopDragEl);
+
+                    placementrow["widget-tree-hover"]=placementzone;
+                    let startrow=null;
+                    let startrowindex=null;
+                    this.state.structuredData.forEach((row,index)=>{
+                        row["widget-tree-hover"] != "" ? placementrowindex=index : 0;
+                        row["widget-tree-hover"] = "";
+                        if(row["widget-tree-start"]){
+                            startrow=row;
+                            startrowindex=index;
+                        }  
+                        row["widget-tree-start"] = false;
+                        
+                    })
+                    if(startrow && startrowindex != placementrowindex ){
+                        let oldRow=JSON.parse(JSON.stringify(startrow));
+                        if(placementzone == "prev"){
+                            this.state.fkcols.forEach((colname)=>{
+                                startrow[colname]=placementrow[colname];
+                            });
+                            if(startrowindex>placementrowindex){
+                                this.state.structuredData.splice(startrowindex,1);
+                                this.state.structuredData.splice(placementrowindex-1,0,startrow);
+                            }
+                        }
+                        else if(placementzone == "next"){
+                            this.state.fkcols.forEach((colname)=>{
+                                startrow[colname]=placementrow[colname];
+                            });
+                            if(startrowindex<placementrowindex){
+                                this.state.structuredData.splice(startrowindex,1);
+                                this.state.structuredData.splice(placementrowindex,0,startrow);
+                            }
+                        }
+                        else{
+                            this.state.fkcols.forEach((colname,index)=>{
+                                startrow[colname]=placementrow[this.state.pkcols[index]];
+                            });
+                            
+                        }
+                        let newRow = JSON.parse(JSON.stringify(startrow));
+                        let fullObj = this.state.structuredData.map((row,index)=>{
+                            let rowCopy = { sortposition:index }
+                            Object.keys(row).forEach((key)=>{
+                                 key in this.state.datakeys ? rowCopy[key] = row[key]: 0;
+                            });
+                            return rowCopy;
+                        })
+                        let putObj = {
+                            "pkcols":this.state.pkcols,
+                            "old":oldRow,
+                            "new":newRow,
+                            "full":fullObj,
+                            "type":"put"
+                        };
+                        this.state.callbacks.put(putObj);
+                        this.state.data=this.state.structuredData;
+                        this.buildTree();
+                    }
+                    this.state.dragging=false;
+                    this.update();
+                }
+            }
+        }
+    }
+    </script>
 </widget-tree>

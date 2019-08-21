@@ -56,7 +56,7 @@
             </tr>
         </tbody>
         <tfoot class="bg-{state.theme.bg} text-{state.theme.text}">
-            <tr>
+            <tr if="{state.tableOptions.footer}">
                 <td class="footer-cell-control border-0" 
                     colspan="1">
                     <span class="badge badge-secondary c-pointer d-none">
@@ -65,28 +65,30 @@
                         </div>
                     </span>
                 </td>
-                <td class="footer-cell-control" 
-                    colspan="{state.datakeys.length-2}">
-                    <span>
-                        <select onchange="{setPageCount}">
-                            <option val="1">1</option>
-                            <option val="10" selected>10</option>
-                            <option val="25">25</option>
-                            <option val="50">50</option>
-                            <option val="100">100</option>
-                        </select>
-                    </span>
-                    <span class="ml-3">
-                        <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="1">&#8676;</button>
-                        <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
-                        page
-                        <input class="footer-cell-control-page-input" type="number" value="{state.pagination.page}" onchange="{setPage}">
-                        <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{state.pagination.page+1}">{state.pagination.page+1}</button>
-                        <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}">&#8677;</button>
-                        of { state.pagination.max }
-                    </span>
-                    <span class="ml-3">
-                        displaying {state.pagination.start+1} to { state.data.length < state.pagination.end-1 ? state.data.length : state.pagination.end-1 } of { state.data.length }
+                <td  class="footer-cell-control" 
+                    colspan="{visibleCols()}">
+                    <span if="{state.tableOptions.pagination}">
+                        <span>
+                            <select onchange="{setPageCount}">
+                                <option val="1">1</option>
+                                <option val="10" selected>10</option>
+                                <option val="25">25</option>
+                                <option val="50">50</option>
+                                <option val="100">100</option>
+                            </select>
+                        </span>
+                        <span class="ml-3">
+                            <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="1">&#8676;</button>
+                            <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
+                            page
+                            <input class="footer-cell-control-page-input" type="number" value="{state.pagination.page}" onchange="{setPage}">
+                            <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{state.pagination.page+1}">{state.pagination.page+1}</button>
+                            <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}">&#8677;</button>
+                            of { state.pagination.max }
+                        </span>
+                        <span class="ml-3">
+                            displaying {state.pagination.start+1} to { state.data.length < state.pagination.end-1 ? state.data.length : state.pagination.end-1 } of { state.data.length }
+                        </span>
                     </span>
                 </td>
                 <td class="cell-counter cell-counter-bottom c-pointer text-right">
@@ -211,7 +213,7 @@
         .widget-grid-header * {
             user-select: none; /* CSS3 (little to no support) */
         -ms-user-select: none; /* IE 10+ */
-       -moz-user-select: none; /* Gecko (Firefox) */
+        -moz-user-select: none; /* Gecko (Firefox) */
     -webkit-user-select: none; /* Webkit (Safari, Chrome) */
         }
         input[type="checkbox"],input[type="radio"]{
@@ -221,7 +223,7 @@
     </style>
     <script>
         export default {
-            state : {
+            state: {
                 data:[],
                 new:{},
                 delete:{},
@@ -231,22 +233,17 @@
                 datakeys:[],
                 shiftmodifier:false,
                 tabbed:false,
-                pagination:{
-                    show:10,
-                    page:1,
-                    start:0,
-                    end:10,
-                    max:1,
-                },
+                pagination:{},
                 callbacks:{},
                 options:{},
                 tableOptions:{},
                 sort:{},
                 theme:{},
+                firstRun:true,
                 mode:"",
-                all:false
+                all:false,                
+                preventNextChange:false
             },
-            preventNextChange:false,
             debugMode:false,
             debug:{
                 data:[
@@ -353,7 +350,9 @@
                 },
                 tableOptions:{
                     delete:true,
-                    post:true
+                    post:true,
+                    pagination:true,
+                    footer:true
                 },
                 typeSort:{
                     "String":(a,b)=>{
@@ -389,11 +388,27 @@
             windowkeyup:null,
             windowkeydown:null,
             onBeforeMount(props,state){
+                
+                this.state.options = {};
+                this.state.tableOptions = {};
+                this.state.sort = {};
+                this.state.theme = {};
+                this.state.pagination = {
+                    show:10,
+                    page:1,
+                    start:0,
+                    end:10,
+                    max:1,
+                };
+                
                 props = this.debugMode ? this.debug : props;
-                this.windowkeyup = window.addEventListener("keyup",(e)=>this.controlModifier(e));
-                this.windowkeydown = window.addEventListener("keydown",(e)=>this.controlModifier(e));
+                this.windowkeyup = (e)=>this.controlModifier(e);
+                window.addEventListener("keyup",this.windowkeyup);
+                this.windowkeydown = (e)=>this.controlModifier(e);
+                window.addEventListener("keydown",this.windowkeydown);
+
                 // set underlying table data
-                this.state.data = props.data || this.state.data;
+                this.state.data = props.data || this.debug.data;
 
                 // set initial data keys                
                 this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(props.options) ;
@@ -406,6 +421,7 @@
                 this.state.callbacks=callbacks;
                 // set column options (autotype, typeoverride, visible, insert, update, delete, pk)
                 /* setting column options requires iterating through data's key, determinine generic autotype and overriding with users entered overrides via props */
+                
                 this.state.datakeys.forEach((key)=>{
                     let columnOptions=Object.assign({},this.defaults.options);
                     
@@ -441,18 +457,43 @@
                 this.state.theme = Object.assign({},this.defaults.theme);
                 this.state.theme = props.theme ? Object.assign(this.state.theme,props.theme): this.state.theme;
 
-                this.state.pkidarr = this.getPKID();
-                this.state.pkidstr = this.state.pkidarr.join('-');
+                this.state.pkcols = this.getPKID();
+                this.state.pkidstr = this.state.pkcols.join('-');
+                if(props.path && this.state.firstRun){
+                    this.state.path=props.path;
+                    this.state.pathstr=JSON.stringify(props.path);
+                    let path= this.state.path;
+                    this.state.firstRun=false;
+                    setTimeout(()=>{
+                        let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
+                        if(path.length>0){
+                            let type = this.state.options[path[1]].type;
+                            let setter = this.getInputSetMethod(type);
+                            let input = this.$(id);
+                            let value = this.state.data[path[0]][path[1]];
+                            setter(input,value);
+                            if(input){
+                                input.focus();
+                                input.select();
+                            }
+                        }
+                    },50)
+                    
+                }
             },
             onBeforeUnmount(){
-                window.removeEventListener(this.windowkeyup);
-                window.removeEventListener(this.windowkeydown);
+                if(this.windowkeyup){
+                    window.removeEventListener("keyup",this.windowkeyup);
+                    window.removeEventListener("keydown",this.windowkeydown);
+                }
+                else{
+                    console.log(this.windowkeyup,"keyevents wiped prior to app mount");
+                }
             },
             getPKID(){
                 let PKID = [];
                 this.state.datakeys.forEach((key)=>{
                     this.state.options[key].pk ? PKID.push(key) : 0 ;
-
                 })
                 return PKID;
             },
@@ -515,12 +556,11 @@
                 }
             },
             getRowKey(row){
-                return this.state.pkidarr.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
+                return this.state.pkcols.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
             },
             parseColType(str,col){
                 let type=this.state.options[col].type;
                 if(type===Number){
-
                     return str.type===String  ? parseFloat(str) : str;
                 }
                 else if(type===String){
@@ -614,17 +654,6 @@
                 }
                 this.state.deletecnt=Object.keys(this.state.delete).length;
                 this.update();
-                /*  Inverse add logic
-                    let add = false;
-                    rowkeys.forEach((key)=>{
-                        if(this.state.data[i][key]!=rowkeyobj[key]){
-                            add=true;
-                        }
-                    });
-                    if(add){
-
-                    }
-                */
             },
             postMenu(e){
                 this.state.mode = this.state.mode=="post"?"":"post";
@@ -637,7 +666,7 @@
                 );
             },
             control(e){
-                if(e.key == "Tab" || e.key =="ArrowDown"){
+                if(e.key == "Tab" || e.key =="ArrowDown" || e.key == "Enter"){
                     e.preventDefault();
                 }
                 let datakeys=this.state.datakeys;
@@ -675,18 +704,20 @@
                             rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
                         } 
                     }
+                    console.log("here",
+                    this.state.preventNextChange);
                     curpath[keypathindex]=datakeys[curkeyindex];
-                    this.editState(curpath,true);
+                    this.editState(curpath);
                 }
                 if(e.key == "Enter" || e.key == "ArrowDown") {
                     this.applyPut(e,true);
                     rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
-                    this.editState(curpath,true)
+                    this.editState(curpath)
                 }
                 if(e.key == "ArrowUp"){
                     this.applyPut(e,true);
                     rowindex == 0 ? curpath[rowpathindex] = this.state.data.length-1 : curpath[rowpathindex]--;
-                    this.editState(curpath,true);
+                    this.editState(curpath);
                 }
                 if(e.key == "Escape"){
                     this.editState([]);
@@ -730,24 +761,24 @@
             },
             applyPut(e,preventNextChange=false){
                 let path = this.state.path;
-                if(path.length>0 && this.preventNextChange==false){
+                if(path.length>0 && this.state.preventNextChange==false){
                     let type = this.state.options[path[1]].type;
                     let getter = this.getInputGetMethod(type);
                     let old=JSON.parse(JSON.stringify(this.state.data[path[0]]));
                     this.state.data[path[0]][path[1]] = getter(e);
                     if(JSON.stringify(old)!=JSON.stringify(this.state.data[path[0]])){
                         this.state.callbacks.put({
-                            pkid:this.getPKID(),
+                            pkcols:this.state.pkcols,
                             type:"put",
                             old:old,
                             new:this.state.data[path[0]]
                         });
                     }
-                    this.preventNextChange=preventNextChange;
+                    this.state.preventNextChange=preventNextChange;
                     this.update();
                 }
                 else{
-                    this.preventNextChange=false;
+                    this.state.preventNextChange=false;
                 }
             },
             editPost(e){
@@ -784,7 +815,7 @@
                     });
                 } 
                 this.state.callbacks.post({
-                    pkid:postbackPKID,
+                    pkcols:postbackPKID,
                     type:"post",
                     new:postback,
                     confirmContent:postbackPKIDObj,
@@ -898,6 +929,13 @@
                 this.state.data = this.state.data.sort((a,b)=>{ 
                     return dimensionalSort(orderedsorts,0,a,b);
                 });
+            },
+            visibleCols(){
+                let visibleCount = 0;
+                Object.keys(this.state.options).forEach((key)=>{
+                    this.state.options[key].visible ? visibleCount++ : 0 ;
+                })
+                return visibleCount-1;
             }
         }
     </script>
