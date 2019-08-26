@@ -36,7 +36,7 @@
                             onblur="{()=>leavetable([index,key])}"/>
                 </td>
                 <td class="cell-counter border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text} {state.tableOptions.delete ? 'c-pointer':'' }">
-                    <input data-deletekey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.delete}" type="checkbox"/>
+                    <input data-selectkey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.selected}" type="checkbox"/>
                 </td>
             </tr>
             <tr if="{state.mode=='post'}">
@@ -98,7 +98,7 @@
                     </span>
                 </td>
                 <td class="cell-counter cell-counter-bottom">
-                    <span onclick="{applyDelete}" if="{state.tableOptions.delete && state.deletecnt > 0}" class="badge badge-danger c-pointer position-relative table-action">
+                    <span onclick="{applyDelete}" if="{state.tableOptions.delete && state.selectedcnt > 0}" class="badge badge-danger c-pointer position-relative table-action">
                         <span>X</span>
                         <div class="toast position-absolute d-none" >
                             <div class="toast-header">
@@ -108,7 +108,7 @@
                             <div class="toast-body text-muted row-header">
                                 The following items will be deleted
                                 <ul class="list-group mt-2">
-                                    <li class="list-group-item " each="{value in Object.values(state.delete)}">
+                                    <li class="list-group-item " each="{value in Object.values(state.selected)}">
                                         { JSON.stringify(value) }
                                     </li>
                                 </ul>
@@ -226,8 +226,8 @@
             state: {
                 data:[],
                 new:{},
-                delete:{},
-                deletecnt:0,
+                selected:{},
+                selectedcnt:0,
                 path:[],
                 pathstr:"",
                 datakeys:[],
@@ -244,41 +244,66 @@
                 all:false,                
                 preventNextChange:false
             },
-            debugMode:false,
+            debugMode:true,
             debug:{
                 data:[
-                    {
-                        "Id":1,
-                        "Name":"Ryan",
-                        "Age":27,
-                        "Email":"test@test.com",
-                        "Is":false
-                    },{
-                        "Id":2,
-                        "Name":"Kiichi",
-                        "Age":null,
-                        "Email":"anothertest@test.com",
-                        "Is":true
-                    },{
-                        "Id":3,
-                        "Name":"Justin",
-                        "Age":null,
-                        "Email":"testing123@test.com",
-                        "Is":false
-                    },{
-                        "Id":4,
-                        "Name":"Korey",
-                        "Age":null,
-                        "Email":"information@test.com",
-                        "Is":false
-                    },{
-                        "Id":5,
-                        "Name":"James",
-                        "Age":null,
-                        "Email":"testinformation@test.com",
-                        "Is":false
-                    }
-                ],
+                        {
+                            "Id":1,
+                            "Name":"Ryan",
+                            "Age":27,
+                            "Email":"test@test.com",
+                            "Is":false,
+                            "StartDate":"2018-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Glen Cove",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
+                        },{
+                            "Id":2,
+                            "Name":"Kiichi",
+                            "Age":null,
+                            "Email":"anothertest@test.com",
+                            "Is":true,
+                            "StartDate":"2002-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Test City",
+                            "Address":"200 Test Street",
+                            "Sex":"M"
+                        },{
+                            "Id":3,
+                            "Name":"Justin",
+                            "Age":null,
+                            "Email":"testing123@test.com",
+                            "Is":false,
+                            "StartDate":"2018-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Another Test City",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
+                        },{
+                            "Id":4,
+                            "Name":"Korey",
+                            "Age":null,
+                            "Email":"information@test.com",
+                            "Is":false,
+                            "StartDate":null,
+                            "State":"NY",
+                            "City":"Another Test City",
+                            "Address":"150 Test Street",
+                            "Sex":"M"
+                        },{
+                            "Id":5,
+                            "Name":"James",
+                            "Age":null,
+                            "Email":"testinformation@test.com",
+                            "Is":false,
+                            "StartDate":null,
+                            "State":"NJ",
+                            "City":"Cityopolis",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
+                        }
+                    ],
                 callbacks:{},
                 options:{
                     "Id":{
@@ -295,9 +320,30 @@
                         type:Number,
                     },
                     "Is":{
+                    },
+                    "StartDate":{
+                        externalInput:"#start-date",
+                        visible:false
+                    },
+                    "State":{
+                        externalInput:"#state-input",
+                        visible:false
+                    },
+                    "City":{
+                        externalInput:"#city-input",
+                        visible:false
+                    },
+                    "Address":{
+                        externalInput:"#address-input",
+                        visible:false
+                    },
+                    "Sex":{
+                        externalInput:"#sex-input",
+                        visible:false
                     }
                 },
                 tableOptions:{
+                    put:true,
                     post:true,
                     delete:true
                 },
@@ -346,6 +392,7 @@
                     visible:true,
                     put:true,
                     pk:false,
+                    externalInput:false,
                     sort:null
                 },
                 tableOptions:{
@@ -388,7 +435,8 @@
             windowkeyup:null,
             windowkeydown:null,
             onBeforeMount(props,state){
-                
+                this.state.selected={};
+                this.state.selectedcnt=0;
                 this.state.options = {};
                 this.state.tableOptions = {};
                 this.state.sort = {};
@@ -406,6 +454,7 @@
                 window.addEventListener("keyup",this.windowkeyup);
                 this.windowkeydown = (e)=>this.controlModifier(e);
                 window.addEventListener("keydown",this.windowkeydown);
+                
 
                 // set underlying table data
                 this.state.data = props.data || this.debug.data;
@@ -441,8 +490,14 @@
                         }
                         columnOptions.type=columnOptions.autotype;
                     }
-                    
                     this.state.options[key] = columnOptions; // set column options
+                    //mount external input change events
+                    let externalInput=this.state.options[key].externalInput;
+                    if(externalInput){
+                        let el = document.querySelector(externalInput);
+                        
+                        el.addEventListener("change",this.applyPutExternal);  
+                    }
                 });
 
                 // set table options (post,delete)
@@ -457,8 +512,10 @@
                 this.state.theme = Object.assign({},this.defaults.theme);
                 this.state.theme = props.theme ? Object.assign(this.state.theme,props.theme): this.state.theme;
 
+                //set pkcols
                 this.state.pkcols = this.getPKID();
                 this.state.pkidstr = this.state.pkcols.join('-');
+
                 if(props.path && this.state.firstRun){
                     this.state.path=props.path;
                     this.state.pathstr=JSON.stringify(props.path);
@@ -477,11 +534,18 @@
                                 input.select();
                             }
                         }
-                    },50)
-                    
+                    },50);
                 }
             },
             onBeforeUnmount(){
+                this.state.datakeys.forEach((key)=>{
+                    let externalInput = this.state.options[key].externalInput;
+                    if(externalInput){
+                        let el = document.querySelector(externalInput);
+                        el ? el.removeEventListener("change",this.applyPutExternal) : 0 ;
+                    }
+
+                })
                 if(this.windowkeyup){
                     window.removeEventListener("keyup",this.windowkeyup);
                     window.removeEventListener("keydown",this.windowkeydown);
@@ -536,7 +600,7 @@
             getInputSetMethod(type){
                 if(type===String){
                     return (el,val)=>{
-                        el.value; 
+                        el.value=val; 
                     };
                 }
                 else if(type===Number){
@@ -554,6 +618,24 @@
                         el.checked=val; 
                     };
                 }
+            },
+            getRow(rowkeyobj){
+                let keys = Object.keys(rowkeyobj);
+                let foundRow;
+                this.state.data.forEach( (row,index)=>{
+                    let match = true;
+                    keys.forEach((key)=>{
+                        if(row[key]!=rowkeyobj[key]){
+                            match=false;
+                            return;
+                        }
+                    });
+                    if(match == true ){
+                        foundRow=row;
+                        return;
+                    }
+                });
+                return foundRow;
             },
             getRowKey(row){
                 return this.state.pkcols.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
@@ -602,7 +684,7 @@
                 this.setPage(mockevent);
             },
             getSelected(){
-                return Object.keys(this.state.delete);
+                return Object.keys(this.state.selected);
             },
             rowMenu(e){
                 if(this.state.tableOptions.delete){
@@ -623,37 +705,39 @@
             toggleAll(e){
                 if(this.state.all){
                     this.state.all=false;
-                    this.state.delete={};
-                    this.state.deletecnt=0;
+                    this.state.selected={};
+                    this.state.selectedcnt=0;
                 }
                 else{
                     for(var i=0;i<this.state.data.length;i++){
                         let rowpairkey = this.getRowKey(this.state.data[i]);
                         let rowkeyobj = this.parseRowKey(rowpairkey);
-                        this.state.delete[rowpairkey]=rowkeyobj;
+                        this.state.selected[rowpairkey]=rowkeyobj;
                     }
                     this.state.all=true;
-                    this.state.deletecnt=this.state.data.length;
+                    this.state.selectedcnt=this.state.data.length;
                 }
                 this.update();
             },
             toggleRow(e){
-                let rowpairkey= e.target.getAttribute("data-deletekey");
+                let rowpairkey= e.target.getAttribute("data-selectkey");
                 let rowkeyobj=this.parseRowKey(rowpairkey);
-                if(rowpairkey in this.state.delete){
+                if(rowpairkey in this.state.selected){
                     //remove item
                     this.state.all=false;
-                    delete this.state.delete[rowpairkey];
+                    delete this.state.selected[rowpairkey];
                 }
                 else{
                     //add item (check if all selected)
-                    this.state.delete[rowpairkey]=rowkeyobj;
-                    if(Object.keys(this.state.delete).length== this.state.data.length){
+                    this.state.selected[rowpairkey]=rowkeyobj;
+                    if(Object.keys(this.state.selected).length==this.state.data.length){
                         this.state.all=true;
                     }
                 }
-                this.state.deletecnt=Object.keys(this.state.delete).length;
+                this.state.selectedcnt=Object.keys(this.state.selected).length;
+                
                 this.update();
+                this.setExternalInputs();
             },
             postMenu(e){
                 this.state.mode = this.state.mode=="post"?"":"post";
@@ -669,14 +753,16 @@
                 if(e.key == "Tab" || e.key =="ArrowDown" || e.key == "Enter"){
                     e.preventDefault();
                 }
-                let datakeys=this.state.datakeys;
+                let datakeys=this.state.datakeys.filter((key)=>{
+                    return this.state.options[key].visible
+                });
                 let rowpathindex=this.state.path.length-2;
                 let keypathindex=this.state.path.length-1;
                 let curkey= this.state.path[keypathindex];
                 let curkeyindex;
                 let rowindex= this.state.path[rowpathindex];
                 let curpath = JSON.parse(JSON.stringify(this.state.path));
-                this.state.datakeys.forEach((key,index)=>{
+                datakeys.forEach((key,index)=>{
                     if(key==curkey){
                         curkeyindex=index;
                     }
@@ -704,8 +790,6 @@
                             rowindex < this.state.data.length-1  ? curpath[rowpathindex]++ : 0
                         } 
                     }
-                    console.log("here",
-                    this.state.preventNextChange);
                     curpath[keypathindex]=datakeys[curkeyindex];
                     this.editState(curpath);
                 }
@@ -740,12 +824,22 @@
                 },200)
             },
             editState(path){
+                this.state.prevPath=this.state.path;
                 let exists = this.state.pathstr != JSON.stringify(path) && JSON.stringify(path) !="[]";
                 this.state.path=path;
                 this.state.pathstr=JSON.stringify(path);
+                // ------------------ UnSelect all but viewed row
+                if(path.length>1){
+                    this.state.all=false;
+                    let selectionKey=this.getRowKey(this.state.data[path[0]]);
+                    this.state.selected={}; 
+                    this.state.selected[selectionKey]=this.parseRowKey(selectionKey);
+                    this.state.selectedcnt=1;
+                }
+                // ------------------
                 this.update();
                 if(exists){
-                    let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
+                    let id =  '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
                     if(path.length>0){
                         let type = this.state.options[path[1]].type;
                         let setter = this.getInputSetMethod(type);
@@ -757,6 +851,111 @@
                             input.select();
                         }
                     }
+                    this.setExternalInputs();
+                }
+            },
+            setExternalInputs(){
+                this.state.datakeys.forEach((key)=>{
+                    if(this.state.options[key].externalInput){
+                        let firstRow;
+                        let matching=true;
+                        let selectedkeys=Object.keys(this.state.selected);
+                        
+                        if(selectedkeys.length>0){
+                            selectedkeys.forEach((selectedkey,index)=>{
+                                if(index==0){
+                                    firstRow=this.getRow(this.state.selected[selectedkey]);
+                                }
+                                else{
+                                    let nextrow=this.getRow(this.state.selected[selectedkey]);
+                                    if(nextrow[key]!=firstRow[key]){
+                                        matching=false;
+                                        return;
+                                    }
+                                }
+                            });
+                            if(matching){
+                                this.setExternalInput(firstRow,key);
+                            }
+                        }
+                        else{
+                            if(this.state.path.length!=0){
+                                let path=this.state.path;
+                                this.setExternalInput(this.state.data[path[0]],key)
+                            }
+                        }
+                    }
+                });
+            },
+            setExternalInput(row,key){
+                let externalInput = this.state.options[key].externalInput;
+                if(externalInput){
+                    let type = this.state.options[key].type;
+                    let setter = this.getInputSetMethod(type);
+                    let input = document.querySelector(externalInput);
+                    let value = row[key];
+                    setter(input,value);
+                }
+            },
+            applyPutExternal(e){
+                let rowKey="";
+                this.state.datakeys.forEach((key)=>{
+                    let externalInput = this.state.options[key].externalInput;
+                    if(externalInput){
+                        let match = e.path[1].querySelector(externalInput);
+                        if(match == document.querySelector(externalInput)){
+                            rowKey=key;
+                        }
+                    }
+                })
+                let selectedKeys = Object.keys(this.state.selected);
+                if( selectedKeys.length>0){
+                    let oldRows=[];
+                    let newRows=[];
+                    let editRows=[];
+                    let type = this.state.options[rowKey].type;
+                    let getter = this.getInputGetMethod(type);
+                    let setValue = getter(e);
+
+                    selectedKeys.forEach((selectedkey)=>{
+                        let editRow=this.getRow(this.state.selected[selectedkey]);
+                        editRows.push(editRow);
+                        let oldRow=JSON.parse(JSON.stringify(editRow));
+                        oldRows.push(oldRow);
+                        let newRow=JSON.parse(JSON.stringify(oldRow));
+                        newRow[rowKey]=setValue;
+                        newRows.push(newRow);
+                    });
+
+                    let confirmPut = (confirm)=>{
+                        if(confirm){
+                            editRows.forEach((row)=>{
+                                row[rowKey]=setValue;
+                            });
+                            this.update();
+                        }                        
+                    }
+                    
+                    this.state.callbacks.put({
+                        pkcols: this.state.pkcols,
+                        type: "put",
+                        old: oldRows,
+                        new: newRows,
+                        confirm: ( this.debugMode ? confirmPut( true ) : confirmPut )
+                    });
+                }
+                else{
+                    this.state.prevPath = this.state.path;
+                    let newPath;
+                    if(JSON.stringify(this.state.path)=="[]"){
+                        newPath = [0,rowKey];
+                    }
+                    else{
+                        newPath = [this.state.path[0],rowKey];
+                    }
+                    this.state.path = newPath;
+                    this.applyPut(e);
+                    this.update();
                 }
             },
             applyPut(e,preventNextChange=false){
@@ -765,17 +964,28 @@
                     let type = this.state.options[path[1]].type;
                     let getter = this.getInputGetMethod(type);
                     let old=JSON.parse(JSON.stringify(this.state.data[path[0]]));
-                    this.state.data[path[0]][path[1]] = getter(e);
-                    if(JSON.stringify(old)!=JSON.stringify(this.state.data[path[0]])){
+                    let setValue=getter(e);
+                    let newRow = JSON.parse(JSON.stringify(this.state.data[path[0]]));
+                    newRow[path[1]]=setValue;
+                    if(JSON.stringify(old)!=JSON.stringify(newRow)){
+                        let confirmPut = (Confirm)=>{
+                            if(Confirm){
+                                this.state.data[path[0]][path[1]] = setValue;
+                                this.update();
+                                return true;
+                            }
+                            return false;
+                        }
                         this.state.callbacks.put({
-                            pkcols:this.state.pkcols,
-                            type:"put",
-                            old:old,
-                            new:this.state.data[path[0]]
+                            pkcols: this.state.pkcols,
+                            type: "put",
+                            old: old,
+                            new: newRow,
+                            confirm: ( this.debugMode ? confirmPut( true ) : confirmPut )
                         });
+                        
                     }
                     this.state.preventNextChange=preventNextChange;
-                    this.update();
                 }
                 else{
                     this.state.preventNextChange=false;
@@ -823,20 +1033,20 @@
                 });
             },
             applyDelete(e){
-                let deletekeys=Object.keys(this.state.delete).map((key)=>this.state.delete[key]);
+                let selectkeys=Object.keys(this.state.selected).map((key)=>this.state.selected[key]);
 
                 e.preventDefault();
                 e.stopPropagation();
 
-                let confirmdelete = (result,callback=(deleted,deletekeys)=>{ console.log("client side delete failed",deleted,deletekeys) })=>{
+                let confirmdelete = (result,callback=(deleted,selectkeys)=>{ console.log("client side delete failed",deleted,selectkeys) })=>{
                         if(result){
                             let deleted=[];
                             for(var i=0;i<this.state.data.length;i++){
                                 let match=false;
-                                deletekeys.forEach((deletekey)=>{
+                                selectkeys.forEach((selectkey)=>{
                                     let keymatch=true;
-                                    Object.keys(deletekey).forEach((key)=>{
-                                        if(this.state.data[i][key]!=deletekey[key]){
+                                    Object.keys(selectkey).forEach((key)=>{
+                                        if(this.state.data[i][key]!=selectkey[key]){
                                             keymatch=false;
                                         }
                                     })
@@ -850,8 +1060,8 @@
                                     i--;
                                 }
                             }
-                            if(deleted.length!=deletekeys.length){
-                                callback(deleted,deletekeys);
+                            if(deleted.length!=selectkeys.length){
+                                callback(deleted,selectkeys);
                             }
                             this.update();
                         }
@@ -859,7 +1069,7 @@
                     };
 
                 this.state.callbacks.delete({
-                    old: deletekeys,
+                    old: selectkeys,
                     type:"delete",
                     confirm: (this.debugMode ? confirmdelete(true) : confirmdelete)  
                 })

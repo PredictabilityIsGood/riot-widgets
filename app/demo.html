@@ -18,6 +18,65 @@
                     ></widget-grid>
             </div>
             <hr class="my-4">
+            <div class="card w-100">
+                <div class="card-header">
+                    External Input Controls
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="state-input">State</label>
+                                </div>
+                                <select class="custom-select" id="state-input">
+                                    <option disabled selected value> Select a State </option>
+                                    <option value="NY">NY</option>
+                                    <option value="NJ">NJ</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" for="city-input">City</span>
+                                </div>
+                                <input id="city-input" class="form-control" type="text" placeholder="e.g. Greenvale" />
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" for="address-input">Address</span>
+                                </div>
+                                <input id="address-input" class="form-control" type="text" placeholder="e.g. 100 Main St." />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="sex-input">Sex</label>
+                        </div>
+                        <select class="custom-select" id="sex-input">
+                            <option disabled selected value>--- select option ---</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" for="start-date">Date Started</span>
+                        </div>
+                        <input id="start-date" class="form-control" type="datetime-local" placeholder="Employment Start Date" />
+                    </div>
+                </div>
+                <div class="card-footer">
+                    Have widget-grid control external input changes to your service - bound on OnBeforeMount within widget-grid
+                </div>
+            </div>
         </div>
     </div>
     <div class="jumbotron jumbotron-fluid m-4">
@@ -33,6 +92,7 @@
                 <widget-tree></widget-tree>
             </div>
             <hr class="my-4">
+            
         </div>
     </div>
     <script>
@@ -48,31 +108,56 @@
                             "Name":"Ryan",
                             "Age":27,
                             "Email":"test@test.com",
-                            "Is":false
+                            "Is":false,
+                            "StartDate":"2018-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Glen Cove",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
                         },{
                             "Id":2,
                             "Name":"Kiichi",
                             "Age":null,
                             "Email":"anothertest@test.com",
-                            "Is":true
+                            "Is":true,
+                            "StartDate":"2002-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Test City",
+                            "Address":"200 Test Street",
+                            "Sex":"M"
                         },{
                             "Id":3,
                             "Name":"Justin",
                             "Age":null,
                             "Email":"testing123@test.com",
-                            "Is":false
+                            "Is":false,
+                            "StartDate":"2018-01-01T00:00:01",
+                            "State":"NY",
+                            "City":"Another Test City",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
                         },{
                             "Id":4,
                             "Name":"Korey",
                             "Age":null,
                             "Email":"information@test.com",
-                            "Is":false
+                            "Is":false,
+                            "StartDate":null,
+                            "State":"NY",
+                            "City":"Another Test City",
+                            "Address":"150 Test Street",
+                            "Sex":"M"
                         },{
                             "Id":5,
                             "Name":"James",
                             "Age":null,
                             "Email":"testinformation@test.com",
-                            "Is":false
+                            "Is":false,
+                            "StartDate":null,
+                            "State":"NJ",
+                            "City":"Cityopolis",
+                            "Address":"100 Test Street",
+                            "Sex":"M"
                         }
                     ],
                     options:{
@@ -90,6 +175,26 @@
                             type:Number,
                         },
                         "Is":{
+                        },
+                        "StartDate":{
+                            externalInput:"#start-date",
+                            visible:false
+                        },
+                        "State":{
+                            externalInput:"#state-input",
+                            visible:false
+                        },
+                        "City":{
+                            externalInput:"#city-input",
+                            visible:false
+                        },
+                        "Address":{
+                            externalInput:"#address-input",
+                            visible:false
+                        },
+                        "Sex":{
+                            externalInput:"#sex-input",
+                            visible:false
                         }
                     },
                     tableOptions:{

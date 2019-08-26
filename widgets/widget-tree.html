@@ -13,13 +13,14 @@
             <div id="{getRowKey(item)}" 
                 class="col tree-content-join"
                 onmouseenter="{hovered}"
+                onmousedown="{drag}" onmouseup="{drop}"
                 style="max-width:{94-(item['widget-tree-branch-path'].length)}%">
                 <button type="button" 
                         class="list-group-item list-group-item-action edged tree-item  tree-node-placement-{ item['widget-tree-hover'] == '' ? 'none' : item['widget-tree-hover'] }">
                     <span each="{col in state.contentcols}" onclick="{()=>{ putItem(item) }}">
                             {item[col]}
                     </span>
-                    <span class="badge badge-secondary float-right tree-control" onmousedown="{drag}" onmouseup="{drop}">
+                    <span class="badge badge-secondary float-right tree-control" onclick="{()=>{ sort(item) }}" >
                         &#x21f5;
                     </span>
                     <span class="badge badge-danger float-right tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
@@ -31,9 +32,6 @@
                 </button>
                 <widget-grid if="{item['widget-tree-widget-grid']}" { ...gridProps() }></widget-grid>
             </div>       
-        </div>
-        <div class="d-none drag-overlay position-absolute w-100 h-100">
-
         </div>
     </div>
     <style>
@@ -93,7 +91,6 @@
             gridAttr:{
                 props:{},
                 overrides:{
-                    
                     tableOptions:{
                         delete:false,
                         pagination:false,
@@ -126,6 +123,7 @@
             },
             treeMode:"",
             dragging:false,
+            sort:{}
         },
         debug:{
             data:[{
@@ -209,6 +207,33 @@
                 fk:"",
                 sort:null
             },
+            typeSort:{
+                "String":(a,b)=>{
+                    return a.localeCompare(b);
+                },
+                "Number":(a,b)=>{
+                    a=a==null?-Infinity:a;
+                    b=b==null?-Infinity:b;
+                    let result = parseFloat(a)-parseFloat(b);
+                    if(isNaN(result)){
+                        return 0;
+                    }
+                    else{
+                        result=result==-Infinity?-1:result;
+                        result=result==Infinity?1:result;
+                        return result;
+                    }
+                },
+                "Date":(a,b)=>{
+                    return a-b;
+                },
+                "Boolean":(a,b)=>{
+                    return a-b;
+                },
+                "Array":(a,b)=>{
+                    return a.join("-").localeCompare(b.join("-"));
+                }
+            }
         },
         onBeforeMount(props,status){
             props = this.debugMode ? this.debug : props;
@@ -254,6 +279,11 @@
             });
 
             this.state.callbacks=callbacks;
+
+            // set typeSort options
+            this.state.typeSort = Object.assign({},this.defaults.typeSort);
+            this.state.typeSort = props.typeSort ? Object.assign(this.state.typeSort,props.typeSort) : this.state.typeSort;
+            
             
             this.buildTree();
             
@@ -348,6 +378,7 @@
                 let row  = item.data
                 row["widget-tree-branch-path"] = lit;
                 row["widget-tree-branch-show"] = true;
+                row["widget-tree-branch-sort"] = "NA";
                 row["widget-tree-branch-collapse"] = true;
                 row["widget-tree-widget-grid"] = false;
                 row["widget-tree-start"] = false;
@@ -640,6 +671,74 @@
                     this.state.dragging=false;
                     this.update();
                 }
+            }
+        },
+        sort(branch){
+            let path=branch["widget-tree-branch-path"];
+            let sortSet=[];
+            let iLowest=Infinity;
+            this.state.structuredData.forEach((row,index)=>{
+                row["widget-tree-position"]=index;
+                if( row["widget-tree-branch-path"].slice(0,path.length).join("-")==path.join("-") &&
+                    row["widget-tree-branch-path"].length > path.length ){
+                    iLowest = iLowest > row["widget-tree-position"] ? row["widget-tree-position"] : iLowest;
+                    sortSet.push(row);
+                }
+            });
+
+            if(branch["widget-tree-branch-sort"]=="NA"){
+                branch["widget-tree-branch-sort"]="ASC";
+            }
+            else if(branch["widget-tree-branch-sort"]=="ASC"){
+                branch["widget-tree-branch-sort"]="DESC";
+            }
+            else if(branch["widget-tree-branch-sort"]=="DESC"){
+                branch["widget-tree-branch-sort"]="NA";
+            }
+
+            if(branch["widget-tree-branch-sort"]=="ASC" || branch["widget-tree-branch-sort"]=="DESC"){
+                var orderedSorts = this.state.contentcols.map((col,index)=>{
+                    this.state.sort[col]={
+                        "type":branch["widget-tree-branch-sort"],
+                        "order":index+1
+                    };
+                    return col;
+                });
+                this.state.sort["widget-tree-branch-path"]={
+                    "type":branch["widget-tree-branch-sort"],
+                    "order":0
+                }
+                orderedSorts.splice(0,0,"widget-tree-branch-path");
+                sortSet.forEach((sortrow)=>{
+                    this.state.structuredData.forEach((structuredrow,index)=>{
+                        let match = true;
+                        this.state.pkcols.forEach((col)=>{
+                            structuredrow[col]!=sortrow[col]?match=false:true;
+                        });
+                        if(match){
+                            this.state.structuredData.splice(index,1);
+                        }
+                    });
+                });
+                var thisref = this;
+                function dimensionalSort(dimensionalsorts, dimensionalindex=0,a,b){
+                    if(dimensionalindex<dimensionalsorts.length){
+                        let key=dimensionalsorts[dimensionalindex];
+                        let typeSortName=key in thisref.state.options ? thisref.state.options[key].type.name : a[key].constructor.name;
+                        let sortresult=thisref.state.typeSort[typeSortName](a[key],b[key]);
+                        sortresult = thisref.state.sort[key].type=="ASC" ? sortresult : -1 * sortresult;
+                        dimensionalindex++;
+                        return sortresult==0 ? dimensionalSort(dimensionalsorts,dimensionalindex,a,b) : sortresult;
+                    }
+                }
+                sortSet.sort((a,b)=>{
+                    return dimensionalSort(orderedSorts,0,a,b);
+                });
+                while(sortSet.length>0){
+                    this.state.structuredData.splice(iLowest,0,sortSet.splice(sortSet.length-1,1)[0]);
+                }
+                this.state.data=this.state.structuredData;
+                this.update();
             }
         }
     }
