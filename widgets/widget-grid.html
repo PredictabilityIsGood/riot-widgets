@@ -1008,15 +1008,18 @@
                 });
 
                 let confirmPost = (PKIDMergeObj)=>{
-                    this.state.data.push(Object.assign(postback,PKIDMergeObj));
-                    this.state.datakeys.forEach((key)=>{
-                        let input = this.$('#new-insert-'+key);
-                        input !== undefined ? input.value='':0;
+                    if(PKIDMergeObj){
+                        this.state.data.push(Object.assign(postback,PKIDMergeObj));
+                        this.state.datakeys.forEach((key)=>{
+                            let input = this.$('#new-insert-'+key);
+                            input !== undefined ? input.value='':0;
 
-                    })
-                    this.state.new={};
-                    this.update();
-                    return confirmPost;
+                        })
+                        this.state.new={};
+                        this.update();
+                        return true;
+                    }
+                    return false;
                 }
 
                 if(this.debugMode){
@@ -1064,8 +1067,9 @@
                                 callback(deleted,selectkeys);
                             }
                             this.update();
+                            return true;
                         }
-                        return confirmdelete;
+                        return false;
                     };
 
                 this.state.callbacks.delete({
