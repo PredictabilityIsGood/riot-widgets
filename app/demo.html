@@ -95,10 +95,22 @@
             
         </div>
     </div>
+
+    
+    
     <script>
         export default {
             state:{
                        
+            },
+            getData(){
+                //send request to get data
+            },
+            putData(){
+                //send data to server to mutate record
+            },
+            postData(){
+                //send data to server to create record
             },
             dataSet(){
                 return {
@@ -175,6 +187,7 @@
                             type:Number,
                         },
                         "Is":{
+                        
                         },
                         "StartDate":{
                             externalInput:"#start-date",
