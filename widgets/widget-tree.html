@@ -188,7 +188,7 @@
                 }
             }
         },
-        debugMode:true,
+        debugMode:false,
         defaults:{
             callbacks:{
                 put:(updated)=> console.log(updated),
@@ -236,6 +236,15 @@
             }
         },
         onBeforeMount(props,status){
+
+            if(props.debugMode==true){
+                this.debugMode=props.debugMode;
+                console.log(this," - debug mode on (widget-tree)");
+                if(props.debug){
+                    this.debug=props.debug;
+                }
+            }
+
             props = this.debugMode ? this.debug : props;
             this.state.gridAttr.props=Object.assign({},props);
             window.addEventListener("mousemove",this.mouseMove);

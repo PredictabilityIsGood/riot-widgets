@@ -220,6 +220,9 @@
                 height:15px;
                 outline:none!important;
             }
+            .table-hover tbody tr:hover td {
+                background-color:rgba(0,0,0,.075)!important;
+            }
         </style>
         <script>
             export default {
@@ -244,7 +247,7 @@
                     all:false,                
                     preventNextChange:false
                 },
-                debugMode:true,
+                debugMode:false,
                 debug:{
                     data:[
                             {
@@ -396,6 +399,7 @@
                         sort:null
                     },
                     tableOptions:{
+                        put:true,
                         delete:true,
                         post:true,
                         pagination:true,
@@ -449,7 +453,15 @@
                         max:1,
                     };
                     
-                    props = this.debugMode ? this.debug : props;
+                    if(props.debugMode==true){
+                        this.debugMode=props.debugMode;
+                        console.log(this," - debug mode on (widget-grid)");
+                        if(props.debug){
+                            this.debug=props.debug;
+                        }
+                    }
+
+                    let configuration = this.debugMode ? this.debug : props;
                     this.windowkeyup = (e)=>this.controlModifier(e);
                     window.addEventListener("keyup",this.windowkeyup);
                     this.windowkeydown = (e)=>this.controlModifier(e);
@@ -457,15 +469,15 @@
                     
     
                     // set underlying table data
-                    this.state.data = props.data || this.debug.data;
+                    this.state.data = configuration.data || this.debug.data;
     
                     // set initial data keys                
-                    this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(props.options) ;
+                    this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(configuration.options) ;
     
                     // set table operation callbacks - functions cannot use assign
                     let callbacks = Object.assign({},this.defaults.callbacks);
                     Object.keys(callbacks).forEach((callback)=>{
-                        callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
+                        callbacks[callback] = configuration.callbacks && configuration.callbacks[callback] ? configuration.callbacks[callback] : callbacks[callback] ;
                     });
                     this.state.callbacks=callbacks;
                     // set column options (autotype, typeoverride, visible, insert, update, delete, pk)
@@ -475,10 +487,10 @@
                         let columnOptions=Object.assign({},this.defaults.options);
                         
                         Object.keys(columnOptions).forEach((optionname)=>{
-                            columnOptions[optionname] = props.options[key] && optionname in props.options[key] ? props.options[key][optionname] : columnOptions[optionname];
+                            columnOptions[optionname] = configuration.options[key] && optionname in configuration.options[key] ? configuration.options[key][optionname] : columnOptions[optionname];
                         });
     
-                        if(!(key in props.options) || !props.options[key].type ){
+                        if(!(key in configuration.options) || !configuration.options[key].type ){
                             let i=0; //search until first auto-type is found for col not null
                             let autotype=null;
                             while(autotype==null && i<this.state.data.length){
@@ -502,23 +514,23 @@
     
                     // set table options (post,delete)
                     this.state.tableOptions = Object.assign({},this.defaults.tableOptions);
-                    this.state.tableOptions = props.tableOptions ? Object.assign(this.state.tableOptions,props.tableOptions):this.state.tableOptions; 
+                    this.state.tableOptions = configuration.tableOptions ? Object.assign(this.state.tableOptions,configuration.tableOptions):this.state.tableOptions; 
     
                     // set typeSort options
                     this.state.typeSort = Object.assign({},this.defaults.typeSort);
-                    this.state.typeSort = props.typeSort ? Object.assign(this.state.typeSort,props.typeSort) : this.state.typeSort;
+                    this.state.typeSort = configuration.typeSort ? Object.assign(this.state.typeSort,configuration.typeSort) : this.state.typeSort;
                     
                     //set theme options
                     this.state.theme = Object.assign({},this.defaults.theme);
-                    this.state.theme = props.theme ? Object.assign(this.state.theme,props.theme): this.state.theme;
+                    this.state.theme = configuration.theme ? Object.assign(this.state.theme,configuration.theme): this.state.theme;
     
                     //set pkcols
                     this.state.pkcols = this.getPKID();
                     this.state.pkidstr = this.state.pkcols.join('-');
     
-                    if(props.path && this.state.firstRun){
-                        this.state.path=props.path;
-                        this.state.pathstr=JSON.stringify(props.path);
+                    if(configuration.path && this.state.firstRun){
+                        this.state.path=configuration.path;
+                        this.state.pathstr=JSON.stringify(configuration.path);
                         let path= this.state.path;
                         this.state.firstRun=false;
                         setTimeout(()=>{
@@ -840,7 +852,8 @@
                     this.update();
                     if(exists){
                         let id =  '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
-                        if(path.length>0){
+                        console.log(this.state.tableOptions);
+                        if(path.length>0 && this.state.tableOptions.put==true){
                             let type = this.state.options[path[1]].type;
                             let setter = this.getInputSetMethod(type);
                             let input = this.$(id);

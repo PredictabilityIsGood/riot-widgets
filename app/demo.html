@@ -12,9 +12,11 @@
                 <widget-grid 
                     data="{dataSet().data}"
                     options="{dataSet().options}"
-                    tableOptions="{dataSet().options}"
+                    tableOptions="{dataSet().tableOptions}"
                     typeSort="{dataSet().typeSort}"
                     theme="{dataSet().theme}"
+                    debugMode="{false}"
+                    debug="{dataSet()}"
                     ></widget-grid>
             </div>
             <hr class="my-4">
@@ -89,7 +91,7 @@
                 <div class="card-header d-none">
                     Incidents
                 </div>
-                <widget-tree></widget-tree>
+                <widget-tree debugMode="{true}"></widget-tree>
             </div>
             <hr class="my-4">
             
@@ -101,13 +103,14 @@
     <script>
         export default {
             state:{
-                       
+                    
             },
             getData(){
                 //send request to get data
             },
-            putData(){
+            putData(input){
                 //send data to server to mutate record
+                console.log(input,"in riot")
             },
             postData(){
                 //send data to server to create record
@@ -211,6 +214,7 @@
                         }
                     },
                     tableOptions:{
+                        put:true,
                         post:true,
                         delete:true
                     },
