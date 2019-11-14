@@ -1,0 +1,34 @@
+<widget-tray>
+    <div class="row pt-3">
+        <div each="{input in inputs()}" class="input-group mb-3 col-lg-6">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="{input.id+'-label'}">{input.alias}</span>
+            </div>
+            <input id="{input.id}" type="text" class="form-control" placeholder="{'enter your '+input.alias.toLowerCase()}" aria-label="Username" aria-describedby="{input.id+'-label'}">
+        </div>
+    </div>
+    <script>
+    export default {
+        state:{
+            columnOptions:{
+
+            }
+        },
+        onBeforeMount(props,state){
+            this.columnOptions=props;
+            
+        },
+        inputs(){
+            return Object.keys(this.columnOptions).filter((key)=>{
+                return this.columnOptions[key].externalInput
+            }).map((key)=>{
+                this.columnOptions[key].id=this.removeSelector(this.columnOptions[key].externalInput);
+                return this.columnOptions[key];
+            });
+        },
+        removeSelector(id){
+            return id.replace("#","");
+        }
+    }
+    </script>
+</widget-tray>
