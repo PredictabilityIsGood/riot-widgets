@@ -397,6 +397,7 @@
                     put:true,
                     pk:false,
                     externalInput:false,
+                    externalChange:false,
                     sort:null
                 },
                 tableOptions:{
@@ -914,6 +915,7 @@
                     let input = document.querySelector(externalInput);
                     let value = row[key];
                     setter(input,value);
+                    this.state.options[key].externalChange==true ? input.dispatchEvent(new Event("change")) : 0 ;
                 }
             },
             applyPutExternal(e){
@@ -921,7 +923,7 @@
                 this.state.datakeys.forEach((key)=>{
                     let externalInput = this.state.options[key].externalInput;
                     if(externalInput){
-                        let match = e.path[1].querySelector(externalInput);
+                        let match = e.composedPath ?  e.composedPath()[1].querySelector(externalInput)  : e.path[1].querySelector(externalInput) ;
                         if(match == document.querySelector(externalInput)){
                             rowKey=key;
                         }
