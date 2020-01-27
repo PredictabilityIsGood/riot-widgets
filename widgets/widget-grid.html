@@ -538,7 +538,7 @@
                     let path= this.state.path;
                     this.state.firstRun=false;
                     setTimeout(()=>{
-                        let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
+                        let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("::-::");
                         console.log(id);
                         if(path.length>0){
                             let type = this.state.options[path[1]].type;
@@ -659,7 +659,7 @@
                 return foundRow;
             },
             getRowKey(row){
-                return this.state.pkcols.map(( pkid )=>{ return pkid+'_'+row[pkid] }).join('-');
+                return this.state.pkcols.map(( pkid )=>{ return pkid+"::_::"+row[pkid] }).join("::-::");
             },
             parseColType(str,col){
                 let type=this.state.options[col].type;
@@ -678,8 +678,8 @@
             },
             parseRowKey(rowkey){
                 let rowkeyobj={};
-                rowkey.split("-").forEach((key)=>{
-                    let keypair = key.split("_");
+                rowkey.split("::-::").forEach((key)=>{
+                    let keypair = key.split("::_::");
                     rowkeyobj[keypair[0]]=this.parseColType(keypair[1],keypair[0]);
                 });
                 return rowkeyobj;
@@ -860,7 +860,7 @@
                 // ------------------
                 this.update();
                 if(exists){
-                    let id =  '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("-");
+                    let id =  '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("::-::");
                     if(path.length>0 && this.state.tableOptions.put==true){
                         let type = this.state.options[path[1]].type;
                         let setter = this.getInputSetMethod(type);
