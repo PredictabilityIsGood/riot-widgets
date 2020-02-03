@@ -882,10 +882,12 @@
                     let externalInput = this.state.options[key].externalInput;
                     if(externalInput){
                         let el = document.querySelector(externalInput);
-                        el ? el.removeEventListener("change",this.applyPutExternal) : 0 ;
-                        let type= this.state.options[key].type;
-                        let setter = this.getInputSetMethod(type);
-                        setter(el,this.state.external[key]);
+                        if(el){
+                            el.removeEventListener("change",this.applyPutExternal);
+                            let type= this.state.options[key].type;
+                            let setter = this.getInputSetMethod(type);
+                            setter(el,this.state.external[key]);
+                        }
                     }
                 });
 
