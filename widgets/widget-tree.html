@@ -235,8 +235,15 @@
                 }
             }
         },
-        onBeforeMount(props,status){
-
+        onBeforeMount(props,state){
+            this.bind(props,state)
+        },
+        onBeforeUpdate(props,state){
+        },
+        onBeforeUnmount(){
+            this.unbind();
+        },
+        bind(props,state){
             if(props.debugMode==true){
                 this.debugMode=props.debugMode;
                 console.log(this," - debug mode on (widget-tree)");
@@ -295,9 +302,8 @@
             
             
             this.buildTree();
-            
         },
-        onBeforeUnmount(){
+        unbind(){
             if(this.mouseMove){
                 window.removeEventListener("mouseup",this.stopDrag);
                 window.removeEventListener("mousedown",this.startDrag);

@@ -2,9 +2,9 @@
     <div class="row pt-3">
         <div each="{input in inputs()}" class="input-group mb-3 col-lg-6">
             <div class="input-group-prepend">
-                <span class="input-group-text" id="{input.id+'-label'}">{input.alias}</span>
+                <span class="input-group-text" id="{input.id+'-label'}">{inputLabel(input)}</span>
             </div>
-            <input id="{input.id}" type="text" class="form-control" placeholder="{'enter your '+input.alias.toLowerCase()}" aria-label="Username" aria-describedby="{input.id+'-label'}">
+            <input id="{input.id}" type="text" class="form-control" placeholder="{'enter your '+inputLabel(input).toLowerCase()}" aria-label="Username" aria-describedby="{input.id+'-label'}">
         </div>
     </div>
     <script>
@@ -15,16 +15,30 @@
             }
         },
         onBeforeMount(props,state){
-            this.columnOptions=props;
-            
+            this.bind(props,state);
         },
-        inputs(){
-            return Object.keys(this.columnOptions).filter((key)=>{
+        bind(props,state){
+            if (props.debugMode == true) {
+                this.debugMode = props.debugMode;
+                console.log(this, " - debug mode on (widget-tray)");
+                if (props.debug) {
+                    this.debug = props.debug;
+                }
+            }
+            this.columnOptions=props;
+            this.state.inputs = Object.keys(this.columnOptions).filter((key)=>{
                 return this.columnOptions[key].externalInput
             }).map((key)=>{
                 this.columnOptions[key].id=this.removeSelector(this.columnOptions[key].externalInput);
+                this.columnOptions[key].columnName=key;
                 return this.columnOptions[key];
             });
+        },
+        inputs(){
+            return this.state.inputs;
+        },
+        inputLabel(row){
+            return row.alias ? row.alias : row.columnName;
         },
         removeSelector(id){
             return id.replace("#","");

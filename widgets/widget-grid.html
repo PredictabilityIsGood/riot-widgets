@@ -19,7 +19,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr if="{isVisible(index)}" each="{(row,index) in state.data}">
+            <tr if="{isVisible(index)}" each="{(row,index) in state.data}" class="{getRowKey(row) in state.operations.put?'action-'+state.operations.put[getRowKey(row)].status:''} {getRowKey(row) in state.operations.post?'action-'+state.operations.post[getRowKey(row)].status:''}">
                 <td class="cell-counter border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text}">
                     <span class="row-menu-wrapper">
                         {index+1}
@@ -39,7 +39,7 @@
                     <input data-selectkey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.selected}" type="checkbox"/>
                 </td>
             </tr>
-            <tr if="{state.mode=='post'}">
+            <tr if="{state.mode=='post'}" id="widget-grid-new">
                 <td onclick="{applyPost}" class="cell-counter cell-post border-{state.theme.border} bg-{state.theme.bg} text-{state.theme.text} c-pointer">
                     <span class="badge badge-secondary">
                         new
@@ -119,11 +119,300 @@
             </tr>
         </tfoot>
     </table>
-
     <style>
         table { 
             font-size:1rem;
             line-height:1.5rem;
+        }
+        /* Safari 4.0 - 8.0 */
+        @-webkit-keyframes successTransition {
+            1% {
+                background-color: #28a745 ;
+                color:white ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #28a745 ;
+                color:white ;
+            }
+        }
+
+        @-moz-keyframes successTransition {
+            1% {
+                background-color: #28a745 ;
+                color:white ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #28a745 ;
+                color:white ;
+            }
+        }
+
+        @-o-keyframes successTransition {
+            1% {
+                background-color: #28a745 ;
+                color:white ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #28a745 ;
+                color:white ;
+            }
+        }
+
+        /* Standard syntax */
+        @keyframes successTransition {
+            1% {
+                background-color: #28a745 ;
+                color:white ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #28a745 ;
+                color:white ;
+            }
+        }
+        .action-success {
+            -webkit-animation:successTransition 2s ease-in-out;
+            -moz-animation:successTransition 2s ease-in-out;
+            -o-animation:successTransition 2s ease-in-out;
+            animation:successTransition 2s ease-in-out;
+        }
+        /* Safari 4.0 - 8.0 */
+        @-webkit-keyframes processingTransition {
+            1% {
+                background-color: #ffc107 ;
+                color:black ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #ffc107 ;
+                color:black ;
+            }
+        }
+
+        @-moz-keyframes processingTransition {
+            1% {
+                background-color: #ffc107 ;
+                color:black ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #ffc107 ;
+                color:black ;
+            }
+        }
+
+        @-o-keyframes processingTransition {
+            1% {
+                background-color: #ffc107 ;
+                color:black ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #ffc107 ;
+                color:black ;
+            }
+        }
+
+        /* Standard syntax */
+        @keyframes processingTransition {
+            1% {
+                background-color: #ffc107;
+                color:black;
+            }
+            50% {
+                /* theme selection */
+                background-color: #ffc107;
+                color:black;
+            }
+        }
+        .action-processing {
+            -webkit-animation:processingTransition 2s ease-in-out;
+            -moz-animation:processingTransition 2s ease-in-out;
+            -o-animation:processingTransition 2s ease-in-out;
+            animation:processingTransition 2s ease-in-out;
+        }
+        /* Safari 4.0 - 8.0 */
+        @-webkit-keyframes failureTransition {
+            1% {
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            100%{
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+        }
+        @-moz-keyframes failureTransition {
+            1% {
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            100%{
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+        }
+        @-o-keyframes failureTransition {
+            1% {
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            100%{
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+        }
+        /* Standard syntax */
+        @keyframes failureTransition {
+            1% {
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            50% {
+                /* theme selection */
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+            100%{
+                background-color: #dc3545 ;
+                color:#fff ;
+            }
+        }
+        .action-failure {
+            -webkit-animation:failureTransition 2s ease-in-out forwards;
+            -moz-animation:failureTransition 2s ease-in-out forwards;
+            -o-animation:failureTransition 2s ease-in-out forwards;
+            animation:failureTransition 2s ease-in-out forwards;
+        }
+
+        /* Safari 4.0 - 8.0 */
+        @-webkit-keyframes baseTransition {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            50% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        @-moz-keyframes baseTransition {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            50% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        @-o-keyframes baseTransition {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            50% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        /* Standard syntax */
+        @keyframes baseTransition {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            50% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        .table .action-success td{
+            -webkit-animation:baseTransition 1s ease-in-out;
+            -moz-animation:baseTransition 1s ease-in-out;
+            -o-animation:baseTransition 1s ease-in-out;
+            animation:baseTransition 1s ease-in-out;
+        }
+        /* Safari 4.0 - 8.0 */
+        @-webkit-keyframes baseTransitionHold {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            100% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        @-moz-keyframes baseTransitionHold {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            100% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        @-o-keyframes baseTransitionHold {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            100% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        /* Standard syntax */
+        @keyframes baseTransitionHold {
+            1% {
+                background-color: inherit;
+                color:inherit ;
+            }
+            100% {
+                /* theme selection */
+                background-color: inherit;
+                color:inherit ;
+            }
+        }
+        
+        .table .action-processing td {
+            -webkit-animation:baseTransitionHold 1s ease-in-out forwards;
+            -moz-animation:baseTransitionHold 1s ease-in-out forwards;
+            -o-animation:baseTransitionHold 1s ease-in-out forwards;
+            animation:baseTransitionHold 1s ease-in-out forwards;
+        }
+        .table .action-failure td {
+            -webkit-animation:baseTransitionHold 1s ease-in-out forwards;
+            -moz-animation:baseTransitionHold 1s ease-in-out forwards;
+            -o-animation:baseTransitionHold 1s ease-in-out forwards;
+            animation:baseTransitionHold 1s ease-in-out forwards;
         }
         .table-action .toast{
             right:20px;
@@ -229,7 +518,13 @@
         export default {
             state: {
                 data:[],
+                operations:{
+                    put:{},
+                    post:{},
+                    delete:{}
+                },
                 new:{},
+                external:{},
                 selected:{},
                 selectedcnt:0,
                 path:[],
@@ -245,8 +540,7 @@
                 theme:{},
                 firstRun:true,
                 mode:"",
-                all:false,                
-                preventNextChange:false
+                all:false
             },
             debugMode:false,
             debug:{
@@ -387,7 +681,10 @@
                 callbacks:{
                     put:(updated)=> console.log(updated),
                     post:(created)=> console.log(created),
-                    delete:(deleted)=> console.log(deleted)
+                    delete:(deleted)=> console.log(deleted),
+                    select:(selected)=> console.log(selected),
+                    success:(success)=> console.log(success),
+                    fail:(failed)=> console.log(failed),
                 },
                 options:{
                     alias:null,
@@ -405,7 +702,8 @@
                     delete:true,
                     post:true,
                     pagination:true,
-                    footer:true
+                    footer:true,
+                    externalPost:false
                 },
                 typeSort:{
                     "String":(a,b)=>{
@@ -441,12 +739,26 @@
             windowkeyup:null,
             windowkeydown:null,
             onBeforeMount(props,state){
-                this.state.selected={};
-                this.state.selectedcnt=0;
-                this.state.options = {};
-                this.state.tableOptions = {};
-                this.state.sort = {};
-                this.state.theme = {};
+                
+                this.bind(props,state);
+            },
+            onBeforeUpdate(props,state){
+                if(this.getSelected().length==0){
+                    this.state.datakeys.forEach((key)=>{
+                        let externalInput = this.state.options[key].externalInput;
+                        if(externalInput){
+                            let el = document.querySelector(externalInput);
+                            let type= this.state.options[key].type;
+                            let setter = this.getInputSetMethod(type);
+                            el ? setter(el,this.state.external[key]) : 0;
+                        }
+                    });
+                }
+            },
+            onBeforeUnmount(){
+                this.unbind();
+            },
+            bind(props,state){
                 this.state.pagination = {
                     show:10,
                     page:1,
@@ -454,6 +766,12 @@
                     end:10,
                     max:1,
                 };
+                this.state.selected={};
+                this.state.selectedcnt=0;
+                this.state.sort={};
+                this.state.options = {};
+                this.state.tableOptions = {};
+                this.state.theme = {};
                 
                 if(props.debugMode==true){
                     this.debugMode=props.debugMode;
@@ -510,8 +828,10 @@
                     if(externalInput){
                         setTimeout(()=>{
                             let el = document.querySelector(externalInput);
-                            el ? el.addEventListener("change",this.applyPutExternal) : 0 ;  
-                            
+                            el ? el.addEventListener("change",(e)=>{ this.applyPutExternal(e,key); }) : 0 ; 
+                            let type = this.state.options[key].type;
+                            let getter = this.getInputGetMethod(type);
+                            el ? this.state.external[key] = getter({target:el}) : 0 ;
                         },45);
                     }
                 });
@@ -519,6 +839,8 @@
                 // set table options (post,delete)
                 this.state.tableOptions = Object.assign({},this.defaults.tableOptions);
                 this.state.tableOptions = configuration.tableOptions ? Object.assign(this.state.tableOptions,configuration.tableOptions):this.state.tableOptions; 
+                let externalPostBtn = document.querySelector(this.state.tableOptions.externalPost)
+                externalPostBtn ? externalPostBtn.addEventListener("click",this.applyPost) : 0 ;
 
                 // set typeSort options
                 this.state.typeSort = Object.assign({},this.defaults.typeSort);
@@ -530,7 +852,7 @@
 
                 //set pkcols
                 this.state.pkcols = this.getPKID();
-                this.state.pkidstr = this.state.pkcols.join('-');
+                this.state.pkidstr = this.state.pkcols.join("::-::");
 
                 if(configuration.path && this.state.firstRun){
                     this.state.path=configuration.path;
@@ -539,13 +861,13 @@
                     this.state.firstRun=false;
                     setTimeout(()=>{
                         let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.getPKID().join("::-::");
-                        console.log(id);
+                        
                         if(path.length>0){
                             let type = this.state.options[path[1]].type;
                             let setter = this.getInputSetMethod(type);
                             let input = this.$(id);
                             let value = this.state.data[path[0]][path[1]];
-                            console.log(input,value);
+                            
                             setter(input,value);
                             if(input){
                                 input.focus();
@@ -555,15 +877,21 @@
                     },50);
                 }
             },
-            onBeforeUnmount(){
+            unbind(){
                 this.state.datakeys.forEach((key)=>{
                     let externalInput = this.state.options[key].externalInput;
                     if(externalInput){
                         let el = document.querySelector(externalInput);
                         el ? el.removeEventListener("change",this.applyPutExternal) : 0 ;
+                        let type= this.state.options[key].type;
+                        let setter = this.getInputSetMethod(type);
+                        setter(el,this.state.external[key]);
                     }
+                });
 
-                })
+                let externalPostBtn = document.querySelector(this.state.tableOptions.externalPost)
+                externalPostBtn ? externalPostBtn.removeEventListener("click",this.applyPost) : 0 ;
+                
                 if(this.windowkeyup){
                     window.removeEventListener("keyup",this.windowkeyup);
                     window.removeEventListener("keydown",this.windowkeydown);
@@ -724,6 +1052,7 @@
                 }
             },
             toggleAll(e){
+                let oldSelected = Object.keys(this.state.selected).map((rowKey)=>{ return this.getRow(this.parseRowKey(rowKey))});
                 if(this.state.all){
                     this.state.all=false;
                     this.state.selected={};
@@ -739,10 +1068,13 @@
                     this.state.selectedcnt=this.state.data.length;
                 }
                 this.update();
+                let newSelected = Object.keys(this.state.selected).map((rowKey)=>{ return this.getRow(this.parseRowKey(rowKey))});
+                this.state.callbacks.select({pkcols:this.getPKID(),type:"select",old:oldSelected,new:newSelected});
             },
             toggleRow(e){
                 let rowpairkey= e.target.getAttribute("data-selectkey");
                 let rowkeyobj=this.parseRowKey(rowpairkey);
+                let oldSelected=Object.keys(this.state.selected).map((rowKey)=>{ return this.getRow(this.parseRowKey(rowKey))});
                 if(rowpairkey in this.state.selected){
                     //remove item
                     this.state.all=false;
@@ -756,9 +1088,11 @@
                     }
                 }
                 this.state.selectedcnt=Object.keys(this.state.selected).length;
-                
                 this.update();
                 this.setExternalInputs();
+                let newSelected=Object.keys(this.state.selected).map((rowKey)=>{ return this.getRow(this.parseRowKey(rowKey))});
+                this.state.callbacks.select({pkcols:this.getPKID(),type:"select",old:oldSelected,new:newSelected});
+                
             },
             postMenu(e){
                 this.state.mode = this.state.mode=="post"?"":"post";
@@ -899,9 +1233,16 @@
                             }
                         }
                         else{
-                            if(this.state.path.length!=0){
-                                let path=this.state.path;
-                                this.setExternalInput(this.state.data[path[0]],key)
+                            if(this.getSelected().length==0){
+                                this.state.datakeys.forEach((key)=>{
+                                    let externalInput = this.state.options[key].externalInput;
+                                    if(externalInput){
+                                        let el = document.querySelector(externalInput);
+                                        let type= this.state.options[key].type;
+                                        let setter = this.getInputSetMethod(type);
+                                        el ? setter(el,this.state.external[key]) : 0;
+                                    }
+                                });
                             }
                         }
                     }
@@ -918,23 +1259,13 @@
                     this.state.options[key].externalChange==true ? input.dispatchEvent(new Event("change")) : 0 ;
                 }
             },
-            applyPutExternal(e){
-                let rowKey="";
-                this.state.datakeys.forEach((key)=>{
-                    let externalInput = this.state.options[key].externalInput;
-                    if(externalInput){
-                        let match = e.composedPath ?  e.composedPath()[1].querySelector(externalInput)  : e.path[1].querySelector(externalInput) ;
-                        if(match == document.querySelector(externalInput)){
-                            rowKey=key;
-                        }
-                    }
-                })
+            applyPutExternal(e,key=null){
                 let selectedKeys = Object.keys(this.state.selected);
                 if( selectedKeys.length>0){
                     let oldRows=[];
                     let newRows=[];
                     let editRows=[];
-                    let type = this.state.options[rowKey].type;
+                    let type = this.state.options[key].type;
                     let getter = this.getInputGetMethod(type);
                     let setValue = getter(e);
 
@@ -944,102 +1275,169 @@
                         let oldRow=JSON.parse(JSON.stringify(editRow));
                         oldRows.push(oldRow);
                         let newRow=JSON.parse(JSON.stringify(oldRow));
-                        newRow[rowKey]=setValue;
+                        newRow[key]=setValue;
                         newRows.push(newRow);
                     });
-
                     let confirmPut = (confirm)=>{
                         if(confirm){
                             editRows.forEach((row)=>{
-                                row[rowKey]=setValue;
+                                row[key]=setValue;
+                                
+                                let rowKey = this.getRowKey(row);
+                                this.state.operations.put[rowKey] = {
+                                    status:"success"
+                                };
                             });
                             this.update();
-                        }                        
+
+                            editRows.forEach((row)=>{
+                                let rowKey = this.getRowKey(row);
+                                delete this.state.operations.put[rowKey];
+                            })
+                            return true;
+                        }
+                        editrows.forEach((row)=>{
+                            let rowKey = this.getRowKey(row);
+                            this.state.operations.put[rowKey] = {
+                                status:"failure"
+                            };
+                        })
+                        this.update();
+                        editrows.forEach((row)=>{
+                            let rowKey = this.getRowKey(row);
+                            delete this.state.operations.put[rowKey];
+                        })
+                        return false;         
                     }
+                    editRows.forEach((row)=>{
+                        let rowKey=this.getRowKey(row);
+                        this.state.operations.put[rowKey] = {
+                            status:"processing",
+                        };
+                    });
                     
+                    this.update();
                     this.state.callbacks.put({
                         pkcols: this.state.pkcols,
                         type: "put",
                         old: oldRows,
                         new: newRows,
-                        confirm: ( this.debugMode ? confirmPut( true ) : confirmPut )
+                        confirm: ( this.debugMode ? setTimeout(()=>{ confirmPut( true ) },50) : confirmPut )
                     });
                 }
                 else{
-                    this.state.prevPath = this.state.path;
-                    let newPath;
-                    if(JSON.stringify(this.state.path)=="[]"){
-                        newPath = [0,rowKey];
-                    }
-                    else{
-                        newPath = [this.state.path[0],rowKey];
-                    }
-                    this.state.path = newPath;
-                    this.applyPut(e);
-                    this.update();
+                    this.editPostExternal(e,key);
                 }
             },
-            applyPut(e,preventNextChange=false){
+            applyPut(e){
                 let path = this.state.path;
-                if(path.length>0 && this.state.preventNextChange==false){
+                if(path.length>0){
                     let type = this.state.options[path[1]].type;
                     let getter = this.getInputGetMethod(type);
-                    let old=JSON.parse(JSON.stringify(this.state.data[path[0]]));
-                    let setValue=getter(e);
+                    let old = JSON.parse(JSON.stringify(this.state.data[path[0]]));
+                    let setValue = getter(e);
                     let newRow = JSON.parse(JSON.stringify(this.state.data[path[0]]));
-                    newRow[path[1]]=setValue;
-                    if(JSON.stringify(old)!=JSON.stringify(newRow)){
+                    let rowKey = this.getRowKey(old);
+                    newRow[path[1]] = setValue;
+                    if( JSON.stringify(old) != JSON.stringify(newRow) ){
                         let confirmPut = (Confirm)=>{
                             if(Confirm){
+                                
                                 this.state.data[path[0]][path[1]] = setValue;
+                                this.state.operations.put[rowKey] = {
+                                    status:"success"
+                                };
                                 this.update();
+                                delete this.state.operations.put[rowKey];
+                                this.state.callbacks.success({pkcols:this.getPKID(),type:"put",action:"success",old:[old],new:[newRow]})
                                 return true;
                             }
+                            this.state.operations.put[rowKey] = {
+                                status:"failure"
+                            };
+                            this.update();
+                            delete this.state.operations.put[rowKey]
+                            this.state.callbacks.fail({pkcols:this.getPKID(),type:"put",action:"fail",old:[old],new:[newRow]})
                             return false;
                         }
+
+                        this.state.operations.put[rowKey] = {
+                            status:"processing",
+                        };
+                        this.update();
                         this.state.callbacks.put({
                             pkcols: this.state.pkcols,
                             type: "put",
-                            old: old,
-                            new: newRow,
-                            confirm: ( this.debugMode ? confirmPut( true ) : confirmPut )
+                            action: "processing",
+                            old: [old],
+                            new: [newRow],
+                            confirm: ( this.debugMode ? setTimeout(()=>{ confirmPut( true ) },50) : confirmPut )
                         });
-                        
                     }
-                    this.state.preventNextChange=preventNextChange;
                 }
-                else{
-                    this.state.preventNextChange=false;
-                }
+            },
+            editPostExternal(e,key){
+                //save postable content to object to send
+                let type = this.state.options[key].type;
+                let getter = this.getInputGetMethod(type);
+                this.state.new[key] = getter(e);
             },
             editPost(e){
                 //save postable content to object to send
                 let key = e.target.getAttribute("data-postkey");
                 let type = this.state.options[key].type;
                 let getter = this.getInputGetMethod(type);
-                this.state.new[key]=getter(e);
+                this.state.new[key] = getter(e);
             },
             applyPost(e){
                 //send object to post callback
                 let postback = JSON.parse(JSON.stringify(this.state.new));
+                let selected = this.getSelected();
+                if(selected.length==1){
+                    Object.assign(postback,this.getRow(this.parseRowKey(selected[0])));
+                }
+
                 let postbackPKID = this.getPKID();
                 let postbackPKIDObj = {};
                 postbackPKID.forEach((pkid)=>{
                     postbackPKIDObj[pkid]=null;
                 });
+                let prevMode = this.state.mode;
 
                 let confirmPost = (PKIDMergeObj)=>{
                     if(PKIDMergeObj){
-                        this.state.data.push(Object.assign(postback,PKIDMergeObj));
+                        let confirmedRow = Object.assign(postback,PKIDMergeObj)
+                        this.state.data.push(confirmedRow);
                         this.state.datakeys.forEach((key)=>{
                             let input = this.$('#new-insert-'+key);
                             input !== undefined ? input.value='':0;
 
                         })
                         this.state.new={};
+                        let rowKey = this.getRowKey(confirmedRow);
+                        this.$('#widget-grid-new').classList.remove('action-processing');
+                        this.state.operations.post[rowKey]={
+                            status:'success'
+                        };
+                        if(prevMode=='post'){
+                            this.state.mode=prevMode;
+                        }
+                        else{
+                            this.state.mode='';
+                        }
                         this.update();
+                        this.toggleRow({ target:this.$("input[data-selectkey=\""+rowKey+"\"]") });
+                        delete this.state.operations.post[this.getRowKey(confirmedRow)];
+                        this.state.callbacks.success({pkcols:postbackPKID,type:"post",action:"success",old:[],new:[confirmedRow]}) 
                         return true;
                     }
+                    //Mark new record as a failure
+                    this.state.operations.post[this.getRowKey(confirmedRow)]={
+                        status:'failure'
+                    };
+                    this.$('#widget-grid-new').classList.remove('action-processing');
+                    this.$('#widget-grid-new').classList.add('action-failure');
+                    this.state.callbacks.fail({pkcols:postbackPKID,type:"post",action:"fail",old:[],new:[PKIDMergeObj]})
                     return false;
                 }
 
@@ -1048,12 +1446,31 @@
                         postbackPKIDObj[pkcol] = this.uuidv4();
                     });
                 } 
+
+                let keysToReset = Object.keys(this.state.external);
+                keysToReset.forEach((key)=>{
+                    let externalInput = this.state.options[key].externalInput;
+                    if(externalInput){
+                        let el = document.querySelector(externalInput);
+                        el ? el.removeEventListener("change",this.applyPutExternal) : 0 ;
+                        let type= this.state.options[key].type;
+                        let setter = this.getInputSetMethod(type);
+                        setter(el,this.state.external[key]);
+                    }
+                });
+
+                this.state.mode="post";
+                this.update();
+                this.$('#widget-grid-new').classList.remove('action-failure');
+                this.$('#widget-grid-new').classList.remove('action-processing');
+                this.$('#widget-grid-new').classList.add('action-processing');
                 this.state.callbacks.post({
                     pkcols:postbackPKID,
                     type:"post",
+                    action: "processing",
                     new:postback,
                     confirmContent:postbackPKIDObj,
-                    confirm: ( this.debugMode ? confirmPost( postbackPKIDObj ) : confirmPost )
+                    confirm: ( this.debugMode ? setTimeout(()=>{ confirmPost( postbackPKIDObj ) },50) : confirmPost )
                 });
             },
             applyDelete(e){
@@ -1063,39 +1480,43 @@
                 e.stopPropagation();
 
                 let confirmdelete = (result,callback=(deleted,selectkeys)=>{ console.log("client side delete failed",deleted,selectkeys) })=>{
-                        if(result){
-                            let deleted=[];
-                            for(var i=0;i<this.state.data.length;i++){
-                                let match=false;
-                                selectkeys.forEach((selectkey)=>{
-                                    let keymatch=true;
-                                    Object.keys(selectkey).forEach((key)=>{
-                                        if(this.state.data[i][key]!=selectkey[key]){
-                                            keymatch=false;
-                                        }
-                                    })
-                                    if(keymatch){
-                                        match=true;
+                    if(result){
+                        let deleted=[];
+                        for(var i=0;i<this.state.data.length;i++){
+                            let match=false;
+                            selectkeys.forEach((selectkey)=>{
+                                let keymatch=true;
+                                Object.keys(selectkey).forEach((key)=>{
+                                    if(this.state.data[i][key]!=selectkey[key]){
+                                        keymatch=false;
                                     }
-                                });
-                                if(match){
-                                    deleted.push(this.state.data[i]);
-                                    this.state.data.splice(i,1);
-                                    i--;
+                                })
+                                if(keymatch){
+                                    match=true;
                                 }
+                            });
+                            if(match){
+                                deleted.push(this.state.data[i]);
+                                this.state.data.splice(i,1);
+                                i--;
                             }
-                            if(deleted.length!=selectkeys.length){
-                                callback(deleted,selectkeys);
-                            }
-                            this.update();
-                            return true;
                         }
-                        return false;
-                    };
+                        if(deleted.length!=selectkeys.length){
+                            callback(deleted,selectkeys);
+                        }
+                        this.update();
+
+                        this.state.callbacks.success({pkcols:this.getPKID(),type:"post",action:"success",old:deleted,new:[]})
+                        return true;
+                    }
+                    this.state.callbacks.fail({pkcols:this.getPKID(),type:"post",action:"fail"})
+                    return false;
+                };
 
                 this.state.callbacks.delete({
                     old: selectkeys,
                     type:"delete",
+                    action: "processing",
                     confirm: (this.debugMode ? confirmdelete(true) : confirmdelete)  
                 })
             },
