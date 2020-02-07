@@ -10,13 +10,14 @@
                     Incidents
                 </div>
                 <widget-grid 
-                    data="{dataSet().data}"
-                    options="{dataSet().options}"
-                    tableOptions="{dataSet().tableOptions}"
-                    typeSort="{dataSet().typeSort}"
-                    theme="{dataSet().theme}"
+                    data="{state.sampleTableData.data}"
+                    options="{state.sampleTableData.options}"
+                    tableOptions="{state.sampleTableData.tableOptions}"
+                    typeSort="{state.sampleTableData.typeSort}"
+                    theme="{state.sampleTableData.theme}"
+                    rebind="{setRebind}"
                     debugMode="{true}"
-                    debug="{dataSet()}"
+                    debug="{state.sampleTableData}"
                     ></widget-grid>
             </div>
             <hr class="my-4">
@@ -31,7 +32,7 @@
                     </button>
                 </div>
                 <div if="{state.tray}" class="card-body">
-                    <widget-tray debugMode="{true}" {...dataSet().options}></widget-tray>
+                    <widget-tray debugMode="{true}" {...state.sampleTableData.options}></widget-tray>
                 </div>
                 <div if="{!state.tray}" class="card-body">
                     <div class="alert alert-primary p-2">
@@ -87,11 +88,42 @@
                         </div>
                         <input id="start-date" class="form-control" type="datetime-local" placeholder="Employment Start Date" />
                     </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="alert alert-primary p-2">
+                                <small>
+                                    Native form validation: <strong>required, minlength, maxlength, min, max, type, pattern</strong>
+                                </small>
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" for="email-address">Email</span>
+                                </div>
+                                <input id="email-address" class="form-control" type="email" placeholder="Email@RestrictedEmail.com" pattern=".*[Rr]estricted[Ee]mail.com$"/>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="alert alert-primary p-2">
+                                <small>
+                                    Custom validations defined within <strong>options.yourColumn.customValidation</strong>
+                                </small>
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" for="favorite-power-two">Favorite Power of Two</span>
+                                </div>
+                                <input id="favorite-power-two" class="form-control" type="number" placeholder="1,2,4,8,16" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-footer text-right">
                     <div class="alert alert-primary d-inline p-2"><small>Setup for external post defined within <strong>tableOptions.externalPost</strong></small></div>
-                    <button id="demo-create" type="button" class="btn btn-primary ml-2">
+                    <button id="demo-new" type="button" class="btn btn-primary ml-2">
                         New
+                    </button>
+                    <button id="demo-copy" type="button" class="btn btn-primary ml-2">
+                        Copy
                     </button>
                 </div>
             </div>
@@ -124,42 +156,28 @@
                     Incidents
                 </div>
                 <widget-card 
-                    data="{dataSet().data}"
-                    options="{dataSet().options}"
-                    tableOptions="{dataSet().tableOptions}"
-                    typeSort="{dataSet().typeSort}"
-                    theme="{dataSet().theme}"
+                    data="{state.sampleTableData.data}"
+                    options="{state.sampleTableData.options}"
+                    tableOptions="{state.sampleTableData.tableOptions}"
+                    typeSort="{state.sampleTableData.typeSort}"
+                    theme="{state.sampleTableData.theme}"
                     debugMode="{true}"
-                    debug="{dataSet()}"></widget-card>
+                    debug="{state.sampleTableData}"></widget-card>
             </div>
             <hr class="my-4">
             
         </div>
     </div>
-
-    
-    
+    <style>
+    input:invalid{
+        border:1px solid salmon !important;
+    }
+    </style>
     <script>
         export default {
             state:{
-                tray:false
-            },
-            getData(){
-                //send request to get data
-            },
-            putData(input){
-                //send data to server to mutate record
-                console.log(input,"in riot")
-            },
-            postData(){
-                //send data to server to create record
-            },
-            toggleInputMode(){
-                this.state.tray=!this.state.tray;
-                this.update();
-            },
-            dataSet(){
-                return {
+                tray:false,
+                sampleTableData:{
                     data:[
                         {
                             "Id":1,
@@ -171,7 +189,9 @@
                             "State":"NY",
                             "City":"Glen Cove",
                             "Address":"100 Test Street",
-                            "Sex":"M"
+                            "Sex":"M",
+                            "Email":"Ryan@RestrictedEmail.com",
+                            "FavoritePowerTwo":64
                         },{
                             "Id":2,
                             "Name":"Kiichi",
@@ -182,7 +202,9 @@
                             "State":"NY",
                             "City":"Test City",
                             "Address":"200 Test Street",
-                            "Sex":"M"
+                            "Sex":"M",
+                            "Email":"Kiichi@RestrictedEmail.com",
+                            "FavoritePowerTwo":128
                         },{
                             "Id":3,
                             "Name":"Justin",
@@ -193,7 +215,9 @@
                             "State":"NY",
                             "City":"Another Test City",
                             "Address":"100 Test Street",
-                            "Sex":"M"
+                            "Sex":"M",
+                            "Email":"Justin@RestrictedEmail.com",
+                            "FavoritePowerTwo":32
                         },{
                             "Id":4,
                             "Name":"Korey",
@@ -204,7 +228,9 @@
                             "State":"NY",
                             "City":"Another Test City",
                             "Address":"150 Test Street",
-                            "Sex":"M"
+                            "Sex":"M",
+                            "Email":"Korey@RestrictedEmail.com",
+                            "FavoritePowerTwo":16
                         },{
                             "Id":5,
                             "Name":"James",
@@ -215,7 +241,9 @@
                             "State":"NJ",
                             "City":"Cityopolis",
                             "Address":"100 Test Street",
-                            "Sex":"M"
+                            "Sex":"M",
+                            "Email":"James@RestrictedEmail.com",
+                            "FavoritePowerTwo":256
                         }
                     ],
                     options:{
@@ -226,7 +254,11 @@
                             visible:false
                         },
                         "Name":{
-                            alias:"Involved Person"
+                            alias:"Involved Person",
+                            customValidation:{
+                                message:"Number is not a power of two",
+                                test:(value)=>{ return value.length>3; }
+                            }
                         },
                         "Age":{
                             alias:"Incident Age",
@@ -254,11 +286,33 @@
                         "Sex":{
                             externalInput:"#sex-input",
                             visible:false
+                        },
+                        "Email":{
+                            externalInput:"#email-address",
+                            visible:false
+                        },
+                        "FavoritePowerTwo":{
+                            externalInput:"#favorite-power-two",
+                            visible:false,
+                            customValidation:{
+                                message:"Number is not a power of two",
+                                test:(value)=>{ return Number.isInteger(Math.log(parseFloat(value))/Math.log(2)); }
+                            }
+                            /*  Where .test must be the testable function, 
+                                and   .message should be failure feedback,
+                                and the rest of the data is re-packaged into
+                                the validation callback
+                            
+                                Can be defined alternatively as:
+                                customValidation:(value)=>{ return Number.isInteger(Math.log(2,value))}
+                                where the canned invalid message is "Invalid field."
+                                
+                            */
                         }
                     },
                     tableOptions:{
-                        put:false,
-                        post:false,
+                        put:true,
+                        post:true,
                         delete:true,
                         externalPost:"#demo-create"
                     },
@@ -289,11 +343,29 @@
                     theme:{
                         bg:"light",
                         border:"light",
-                        text:"dark",
-                        matchContents:true
-                    }
-                };
-            }
+                        text:"dark"
+                    },
+
+                },
+                rebind:null
+            },
+            getData(){
+                //send request to get data
+            },
+            putData(input){
+                //send data to server to mutate record
+            },
+            postData(){
+                //send data to server to create record
+            },
+            toggleInputMode(){
+                this.state.rebind();
+                this.state.tray=!this.state.tray;
+                this.update();
+            },
+            setRebind(rebindFunc){
+                this.state.rebind=rebindFunc;
+            },
         }
     </script>
 </demo>
