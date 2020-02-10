@@ -14,7 +14,10 @@
                     </span>
                 </th>
                 <th class="cell-counter border-{state.theme.border} text-muted">
-                    <input onclick="{toggleAll}" type="checkbox" checked="{state.all}"/>
+                    <label class="widget-grid-checkbox">
+                        <input onclick="{toggleAll}" type="checkbox" checked="{state.all}"/>
+                        <span class="checkmark"></span>
+                    </label>
                 </th>
             </tr>
         </thead>
@@ -29,14 +32,28 @@
                     class="cell-control c-pointer border-{state.theme.border}" 
                     each="{key in state.datakeys}" onclick="{ ()=>editState([index,key]) }"> 
                     <span if="{state.pathstr!=JSON.stringify([index,key]) || (!state.options[key].put) || (!state.tableOptions.put)}"><div if="{state.options[key].type==Image}" class="rounded ppr-sdw table-img" style="background-image: url({row[key]})"></div>{state.options[key].type != Image ? row[key] : ''}</span>
-                    <input if="{state.pathstr==JSON.stringify([index,key]) && state.options[key].put && state.tableOptions.put  }"
+                    <label if="{ getInputType(state.options[key].type) == 'checkbox' && state.pathstr==JSON.stringify([index,key]) && state.options[key].put && state.tableOptions.put  }" 
+                        class="widget-grid-checkbox widget-grid-checkbox-ctrl">
+                        <input 
                             class="w-100" id="{'input-control-'+index+'-'+key+'-'+state.pkidstr }" 
                             type="{ getInputType(state.options[key].type) }" value="{state.data[index][key]}" 
                             onchange="{applyPut}" onkeydown="{control}"
                             onblur="{()=>leavetable([index,key])}"/>
+                        <span class="checkmark"></span>
+                    </label>
+                    <div if="{ getInputType(state.options[key].type) != 'checkbox' &&  state.pathstr==JSON.stringify([index,key]) && state.options[key].put && state.tableOptions.put  }">
+                        <input 
+                            class="w-100" id="{'input-control-'+index+'-'+key+'-'+state.pkidstr }" 
+                            type="{ getInputType(state.options[key].type) }" value="{state.data[index][key]}" 
+                            onchange="{applyPut}" onkeydown="{control}"
+                            onblur="{()=>leavetable([index,key])}"/>
+                    </div>
                 </td>
                 <td class="cell-control cell-counter {state.tableOptions.delete ? 'c-pointer':'' } border-{state.theme.border}">
-                    <input data-selectkey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.selected}" type="checkbox"/>
+                    <label class="widget-grid-checkbox ">
+                        <input data-selectkey="{getRowKey(row)}" onclick="{toggleRow}" checked="{getRowKey(row) in state.selected}" type="checkbox"/>
+                        <span class="checkmark"></span>
+                    </label>
                 </td>
             </tr>
             <tr if="{state.mode=='post'}" id="widget-grid-new">
@@ -407,6 +424,60 @@
         .table-hover tbody tr:hover td {
             background-color:rgba(0,0,0,.075)!important;
         }
+        .widget-grid-checkbox {
+            position:relative;
+            cursor:pointer;
+            display:inline-block;
+            margin-bottom:13px;
+        }
+
+        .widget-grid-checkbox:hover input ~ .checkmark {
+            background-color:#6c757d;
+        }
+        .widget-grid-checkbox input:checked ~ .checkmark {
+            background-color: #20c997;
+        }
+        .widget-grid-checkbox-ctrl input:checked ~ .checkmark {
+            background-color:#6f42c1;
+        }
+        .widget-grid-checkbox .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            border:solid #f8f9fa;
+        }
+        .widget-grid-checkbox input:checked ~ .checkmark:after {
+            display:block;
+        }
+        .widget-grid-checkbox .checkmark:after {
+            left: 6px;
+            top: 3px;
+            width: 3px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 1px 1px 0;
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+        .widget-grid-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0; 
+        }
+        .widget-grid-checkbox .checkmark {
+            position: absolute;
+            top: 0;
+            left: 2px;
+            height: 15px;
+            width: 15px;
+            background-color: #e4e4e4;
+            border-radius:50%;
+            padding-right:10px;
+        }
+
     </style>
     <script>
         export default {
@@ -664,9 +735,9 @@
                 this.unbind();
             },
             bind(props,state){
-                props.rebind(()=>{ 
+                "rebind" in props ? props.rebind(()=>{ 
                     this.state.rebind=true;
-                });
+                }) : 0 
                 this.state.pagination = {
                     show:10,
                     page:1,
