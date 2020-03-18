@@ -1346,7 +1346,9 @@
                     if(el){
                         let value = row[key];
                         setter(el,value);
+                        el.removeEventListener("change",this.state.listeners[key]["change"]);
                         this.state.options[key].externalChange==true ? el.dispatchEvent(new Event("change")) : 0 ;
+                        el.addEventListener("change",this.state.listeners[key]["change"]);
                     }
                     else{
                         console.info("No such element named: "+externalInput)
