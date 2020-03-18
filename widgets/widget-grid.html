@@ -22,6 +22,9 @@
             </tr>
         </thead>
         <tbody class="bg-{state.theme.bg} text-{state.theme.text}">
+            <tr if="{state.data.length==0}">
+                <td colspan="{visibleCols()+3}" class="lead text-center">No records found!</td>
+            </tr>
             <tr if="{isVisible(index)}" each="{(row,index) in state.data}" class="{getRowKey(row) in state.operations.put?'action-'+state.operations.put[getRowKey(row)].status:''} {getRowKey(row) in state.operations.post?'action-'+state.operations.post[getRowKey(row)].status:''}  ">
                 <td class="cell-control cell-counter border-{state.theme.border}">
                     <span class="row-menu-wrapper">
@@ -1155,9 +1158,7 @@
                 else{
                     //add item (check if all selected)
                     this.state.selected[rowpairkey]=rowkeyobj;
-                    if(Object.keys(this.state.selected).length==this.state.data.length){
-                        this.state.all=true;
-                    }
+                    this.isAllSelected();
                 }
                 this.state.selectedcnt=Object.keys(this.state.selected).length;
                 this.update();
@@ -1165,6 +1166,11 @@
                 let newSelected=Object.keys(this.state.selected).map((rowKey)=>{ return this.getRow(this.parseRowKey(rowKey))});
                 this.state.callbacks.select({pkcols:this.state.pkcols,type:"select",old:oldSelected,new:newSelected});
                 
+            },
+            isAllSelected(){
+                if(Object.keys(this.state.selected).length==this.state.data.length){
+                    this.state.all=true;
+                }
             },
             postMenu(e){
                 this.state.mode = this.state.mode=="post"?"":"post";
@@ -1264,7 +1270,8 @@
                     this.state.selected[selectionKey]=this.parseRowKey(selectionKey);
                     this.state.selectedcnt=1;
                 }
-                // ------------------
+                // ------------------ Check if all selected
+                this.isAllSelected();
                 this.update();
                 if(exists){
                     let id =  '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.state.pkidstr;
