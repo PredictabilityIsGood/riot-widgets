@@ -34,6 +34,7 @@
                 </tr>
                 <tr if="{isVisible(index)}"  
                     each="{(row,index) in state.data}" 
+                    key="{row}"
                     class="{getRowKey(row) in state.operations.put?'action-'+state.operations.put[getRowKey(row)].status:''} {getRowKey(row) in state.operations.post?'action-'+state.operations.post[getRowKey(row)].status:''}"
                     onclick="{(e)=>rowClick(e,index,row)}"
                     onmousedown="{(e)=>rowMouseDown(e,index,row)}"
@@ -46,6 +47,7 @@
                         </span>
                     </td>
                     <td if="{key in state.options && state.options[key].visible==true}" 
+                        key="{key}"
                         class="cell-control c-pointer border-{state.theme.border}" 
                         each="{key in state.datakeys}" 
                         onclick="{ (e)=>cellClick(e,index,key) }"
@@ -54,10 +56,9 @@
                         onmouseover="{ (e)=>cellMouseOver(e,index,key) }"
                         onmouseout="{ (e)=>cellMouseOut(e,index,key) }"> 
                         <span if="{state.pathstr!=JSON.stringify([index,key]) || (!state.options[key].put) || (!state.tableOptions.put)}">
-                            <div    if="{state.options[key].tag}"
-                                    is="{state.options[key].tag.name}"
-                                    {...cellScope(row,key)}>
-                            </div>
+                            <template if="{state.options[key].tag && !rowDataUnavailable(row) }">
+                                    <div is="{cellTagName(key)}" {...cellScope(row,key)}></div>
+                            </template>
                             <div if="{!state.options[key].tag}">
                                 <div if="{state.options[key].type==Image}" class="rounded ppr-sdw table-img" style="background-image: url({row[key]})"></div>
                                 {state.options[key].type != Image ? row[key] : ''}
@@ -539,6 +540,7 @@
                     firstRun:true,
                     mode:"",
                     all:false,
+                    mountCell:true,
                     pointer:{
                         global:{
                             mousedown:false,
@@ -1070,28 +1072,16 @@
                     //set pkcols
                     this.state.pkcols = this.getPKID();
                     this.state.pkidstr = this.state.pkcols.join("::-::");
-    
+                },
+                onMounted(props,state){
+                    let configuration = this.debugMode ? this.debug : props;
                     if(configuration.path && this.state.firstRun){
-                        this.state.path=configuration.path;
-                        this.state.pathstr=JSON.stringify(configuration.path);
-                        let path= this.state.path;
-                        this.state.firstRun=false;
                         setTimeout(()=>{
-                            let id = '#input-control-'+path[path.length-2]+'-'+path[path.length-1]+'-'+this.state.pkidstr;
-                            
-                            if(path.length>0){
-                                let type = this.state.options[path[1]].type;
-                                let setter = this.getInputSetMethod(type);
-                                let input = this.$(id);
-                                let value = this.state.data[path[0]][path[1]];
-                                
-                                setter(input,value);
-                                if(input){
-                                    input.focus();
-                                    input.select();
-                                }
-                            }
+                            this.editState(configuration.path);
                         },50);
+                    }
+                    if(this.state.firstRun){
+                        this.state.firstRun=false;
                     }
                 },
                 unbind(){
@@ -1856,6 +1846,12 @@
                         action: "processing",
                         confirm: (this.debugMode ? confirmdelete(true) : confirmdelete)  
                     })
+                },
+                rowDataUnavailable(row){
+                    let rowKey = this.getRowKey(row);
+                    return (    (rowKey in this.state.operations.put && this.state.operations.put[rowKey].status!='success') ||
+                                (rowKey in this.state.operations.post && this.state.operations.post[rowKey].status!='success')
+                    );
                 },
                 uuidv4() {
                     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
