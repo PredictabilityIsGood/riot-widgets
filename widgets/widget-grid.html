@@ -2,11 +2,11 @@
     <table class="p-0 m-0 table table-hover table-sm" 
     onkeyup="{controlModifier}" 
     onkeydown="{controlModifier}" 
-    onclick="{(e)=>tableClick(e.target)}"
-    onmousedown="{(e)=>tableMouseDown(e.target)}"
-    onmouseup="{(e)=>tableMouseUp(e.target)}"
-    onmouseover="{(e)=>tableMouseOver(e.target)}"
-    onmouseout="{(e)=>tableMouseOut(e.target)}">
+    onclick="{(e)=>tableClick(e)}"
+    onmousedown="{(e)=>tableMouseDown(e)}"
+    onmouseup="{(e)=>tableMouseUp(e)}"
+    onmouseover="{(e)=>tableMouseOver(e)}"
+    onmouseout="{(e)=>tableMouseOut(e)}">
         <thead class="widget-grid-header thead-{state.theme.bg} bg-{state.theme.bg} text-{state.theme.text}">
             <tr>
                 <th class="cell-counter border-{state.theme.border} text-muted">#</th>
@@ -598,10 +598,7 @@
                         }
                     },
                     table:{
-                        //statically created upon(cleared upon bind)
-                        mousedown:false,
-                        mouseover:false,
-                        click:0
+                        //dynamically created upon mounted state (cleared upon bind)
                     },
                     row:{
                         //dynamically created based on row index (cleared upon bind)
@@ -1933,6 +1930,17 @@
             pointerDefault(type){
                 return this.state.pointer.default[type];
             },
+            pointerSet(type,key,value){
+                type=="table" ? 
+                    this.state.pointer[type] = value :
+                    this.state.pointer[type][key] = value;
+            },
+            pointerGet(type,key){
+                if(type=="table"){
+                   return "delay" in this.state.pointer[type] ? this.state.pointer[type] : false;     
+                }
+                return key in this.state.pointer[type] ? this.state.pointer[type][key] : false;
+            },
             windowMouseDownListener(event){
                 this.state.pointer.global.mousedown=true;
             },
@@ -1942,7 +1950,6 @@
                     this.state.pointer.global.mousedownStack.forEach(pointer=>{
                         pointer.mouseup=false;
                         if(this.state.pointer.global.drag){
-                            //drop operation (fill in later)
                             pointer.callback.drag(pointer.content);
                         }
                     });
@@ -1964,16 +1971,36 @@
             tieToMouseDownStack(item){
                 this.state.pointer.global.mousedownStack.push(item);
             },
-            gestureCallbackContents(scopeType,gestureType,event,index,key){
-                return {
-                    scopeType:scopeType,
-                    gestureType:gestureType,
-                    event:event,
-                    index:index,
-                    row:this.state.data[index],
-                    column:key,
-                    value:this.state.data[index][key]
-                };
+            gestureCallbackContents(scopeType,gestureType,event,index,contents){
+                if(scopeType == "cell"){
+                    return { 
+                        scopeType:scopeType,
+                        gestureType:gestureType,
+                        event:event,
+                        index:index,
+                        row:this.state.data[index],
+                        column:contents,
+                        value:this.state.data[index][contents]
+                    } //cell
+                }
+                else if(scopeType == "row"){
+                    return {
+                        scopeType:scopeType,
+                        gestureType:gestureType,
+                        event:event,
+                        index:index,
+                        row:contents
+                    } //row/table
+                }
+                else if(scopeType =="table"){
+                   return {
+                        scopeType:scopeType,
+                        gestureType:gestureType,
+                        event:event,
+                        data:contents
+                   } 
+                }
+            
             },
             cellTagScope(row,key){
                 let tagCfg = this.state.options[key].tag;
@@ -1990,19 +2017,13 @@
             cellTagName(key){
                 return this.state.options[key].tag.name;
             },
-            cellPointerSet(key,value){
-                this.state.pointer.cell[key]=value;
-            },
-            cellPointerGet(key){
-                return key in this.state.pointer.cell ? this.state.pointer.cell[key] : false;
-            },
             cellPointerInstance(index,key){
-                let cellkey = this.getCellKey(index,key);
-                let cellPointer = this.cellPointerGet(cellkey);
+                let cellKey = this.getCellKey(index,key);
+                let cellPointer = this.pointerGet("cell",cellKey);
                 let cellPointerDefault = this.pointerDefault("cell");
                 if( !cellPointer ){
                     cellPointer=JSON.parse(JSON.stringify(cellPointerDefault));
-                    this.cellPointerSet(cellkey,cellPointer);
+                    this.pointerSet("cell",cellKey,cellPointer);
                 }
                 return cellPointer;
             },
@@ -2010,7 +2031,7 @@
                 let cellPointer=this.cellPointerInstance(index,key);
                 cellPointer.mouseover=true; 
                 cellPointer.mousedown ? cellPointer.canceldrag = true : 0; //cancel drag operation on self
-                cellPointer.over++
+                cellPointer.over++;
                 setTimeout(()=>{
                     this.cellHover(event,index,key);
                 },this.pointerDefault("cell").delay.hover);
@@ -2021,7 +2042,7 @@
             },
             cellHover(event,index,key){
                 let cellPointer=this.cellPointerInstance(index,key);
-                cellPointer.over--
+                cellPointer.over--;
                 if( cellPointer.mouseover && !this.state.pointer.global.mousedown && cellPointer.over==0 ){
                     this.state.options[key].callbacks.hover(this.gestureCallbackContents("cell","hover",event,index,key));
                 }
@@ -2083,59 +2104,193 @@
                     },this.pointerDefault("cell").delay.click)
                 }
             },
+            rowPointerInstance(index,row){
+                let rowKey = this.getRowKey(row);
+                let rowPointer = this.pointerGet("row",rowKey);
+                let rowPointerDefault = this.pointerDefault("row");
+                if( !rowPointer ){
+                    rowPointer=JSON.parse(JSON.stringify(rowPointerDefault));
+                    this.pointerSet("row",rowKey,rowPointer)
+                }
+                return rowPointer;
+            },
             rowMouseOver(event,index,row){
-
+                let rowPointer=this.rowPointerInstance(index,row);
+                rowPointer.mouseover=true;
+                rowPointer.mousedown ? rowPointer.canceldrag = true : 0;
+                rowPointer.over++;
+                setTimeout(()=>{
+                    this.rowHover(event,index,row);
+                },this.pointerDefault("row").delay.hover);
             },
             rowMouseOut(event,index,row){
-
+                let rowPointer=this.rowPointerInstance(index,row);
+                rowPointer.mouseover = false;
             },
             rowHover(event,index,row){
-
+                let rowPointer=this.rowPointerInstance(index,row);
+                rowPointer.over--;
+                if( rowPointer.mouseover && !this.state.pointer.global.mousedown && rowPointer.over==0  ){
+                    this.state.rowOptions.callbacks.hover(this.gestureCallbackContents("row","hover",event,index,row))
+                }
             },
             rowMouseDown(event,index,row){
-                let rowPointer = {
-                    type:"row",
-                    content:"",
-                    callback:this.defaults.rowOptions.callbacks
-                };
+                let rowPointer = this.rowPointerInstance(index,row);
+                rowPointer.mousedown = true;
                 this.tieToMouseDownStack(rowPointer);
+                setTimeout(()=>{
+                    this.rowHold(event,index,row);
+                },this.pointerDefault("row").delay.hold);
             },
             rowMouseUp(event,index,row){
-
+                let rowPointer = this.rowPointerInstance(index,row);
+                rowPointer.mousedown=false;
             },
             rowHold(event,index,row){
-
+                let rowPointer=this.rowPointerInstance(index,row);
+                if( rowPointer.mousedown ){
+                    if( rowPointer.mouseover && !rowPointer.cancelhold ){
+                        this.state.rowOptions.callbacks.hold(this.gestureCallbackContents("row","hold",event,index,row));
+                    }
+                    else if( !rowPointer.mouseover ){
+                        //drag (store for use by window event listener)
+                        this.state.pointer.global.drag=true;
+                        rowPointer.callback=this.state.rowOptions.callbacks;
+                        rowPointer.content=this.gestureCallbackContents("row","drag",event,index,row);
+                    }
+                }
             },
             rowClick(event,index,row){
                 //determine single/double/triple click
+                let rowPointer = this.rowPointerInstance(index,row);
+                rowPointer.click++;
+                if(rowPointer.click==1){
+                    setTimeout(()=>{
+                        if(rowPointer.click==1){
+                            //single click response
+                            this.state.rowOptions.callbacks.click(this.gestureCallbackContents("row","click",event,index,row))
+                        }
+                        else if(rowPointer.click==2){
+                            //double click response
+                            this.state.rowOptions.callbacks.dblclick(this.gestureCallbackContents("row","dblclick",event,index,row))
+                        }
+                        else if(rowPointer.click==3){
+                            //triple click response
+                            this.state.rowOptions.callbacks.tplclick(this.gestureCallbackContents("row","tplclick",event,index,row))
+                        }
+                        else{
+                            //not yet defined
+                        }
+                        rowPointer.click--;
+                    },this.pointerDefault("row").delay.click);
+                }
+                else{
+                    setTimeout(()=>{
+                        rowPointer.click--;
+                    },this.pointerDefault("row").delay.click);
+                }
+            },
+            // helper function gets/instantiates a tablePointer
+            tablePointerInstance(){ 
+                let tablePointer = this.pointerGet("table");
+                /*  Object that holds table Pointer instance 
+                    (Virtualized state of the current table)
+                    if no instance of tablePointer exists then create
+                    using defaults set above
+                 */
+                let tablePointerDefault = this.pointerDefault("table");
+                if( !tablePointer ){
+                    tablePointer=JSON.parse(JSON.stringify(tablePointerDefault));
+                    this.pointerSet("table",null,tablePointer);
+                }
+                return tablePointer;
             },
             tableMouseOver(event){
-
+                let tablePointer = this.tablePointerInstance();
+                tablePointer.mouseover = true;
+                tablePointer.mousedown ? tablePointer.canceldrag : 0;
+                tablePointer.over++;
+                setTimeout(()=>{
+                    this.tableHover(event);
+                },this.pointerDefault("table").delay.hold)
             },
             tableMouseOut(event){
-
+                //initiate event oinly if mouse is still hovered over table
+                let tablePointer=this.tablePointerInstance();
+                tablePointer.mouseover = false;
             },
             tableHover(event){
-
+                let tablePointer=this.tablePointerInstance();
+                tablePointer.over--;
+                if(tablePointer.mouseover && !this.state.pointer.global.mousedown && tablePointer.over==0){
+                    this.state.tableOptions.callbacks.hover(
+                        this.gestureCallbackContents("table","hover",event,-1,this.state.data)
+                    );
+                }
             },
             tableMouseDown(event){
-                let tablePointer = {
-                    
-                    type:"table",
-                    content:"",
-                    callback:this.defaults.tableOptions.callbacks
-                };
+                let tablePointer = this.tablePointerInstance();
+                tablePointer.mousedown = true;
                 this.tieToMouseDownStack(tablePointer);
+                setTimeout(()=>{
+                    this.tableHold(event);
+                },this.pointerDefault("table").delay.hold);
             },
             tableMouseUp(event){
-
+                let tablePointer = this.tablePointerInstance();
+                tablePointer.mousedown = false;
             },
             tableHold(event){
-
+                let tablePointer = this.tablePointerInstance();
+                if(tablePointer.mousedown){
+                    if(tablePointer.mouseover && !tablePointer.cancelhold){
+                        this.state.tableOptions.callbacks.hold(
+                            this.gestureCallbackContents("table","hold",event,-1,this.state.data)
+                        );
+                    }
+                    else if( !tablePointer.mouseover ){
+                        this.state.pointer.global.drag = true;
+                        tablePointer.callback =  this.state.tableOptions.callbacks;
+                        tablePointer.content = this.gestureCallbackContents("table","hold",event,-1,this.state.data);
+                    }
+                }
             },
             tableClick(event){
-                //determine single/double/triple click
-            }
+                let tablePointer = this.tablePointerInstance();
+                tablePointer.click++;
+                if(tablePointer.click == 1 ) { //The first click!
+                    setTimeout(()=>{
+                        console.log(tablePointer.click);
+                        if(tablePointer.click==1){
+                            this.state.tableOptions.callbacks.click(
+                                this.gestureCallbackContents(
+                                    "table","click",event,-1,this.state.data
+                                )
+                            )
+                        }
+                        else if(tablePointer.click==2){
+                            this.state.tableOptions.callbacks.dblclick(
+                                this.gestureCallbackContents(
+                                    "table","dblclick",event,-1,this.state.data
+                                )
+                            );
+                        }
+                        else if(tablePointer.click==3){
+                            this.state.tableOptions.callbacks.tplclick(
+                                this.gestureCallbackContents(
+                                    "table","tplclick",event,-1,this.state.data
+                                )
+                            )
+                        }
+                        tablePointer.click--;
+                    },this.pointerDefault("table").delay.click);
+                }
+                else{
+                    setTimeout(()=>{
+                        tablePointer.click--;
+                    },this.pointerDefault("table").delay.click);
+                }
+            },
         }
     </script>
 </widget-grid>
