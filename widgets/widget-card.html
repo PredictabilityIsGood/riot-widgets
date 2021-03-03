@@ -1,6 +1,6 @@
 <widget-card>
     <div class="card-deck m-4">
-        <div each="{row in state.data}" class="card mt-2" style="min-width:250px;">
+        <div each="{row in state.data}" class="card m-2" style="min-width:250px; max-width:300px;">
             <img src="{row[state.imagekeys[0]]}" class="card-img-top" alt="...">
             <div class="card-body">
                 <div class="row"
@@ -29,6 +29,13 @@
             </div>
         </div>
     </div>
+    <style>
+        .card-deck {
+            display:flex;
+            flex-direction:row;
+            flex-wrap:wrap;
+        }
+    </style>
     <script>
         export default {
             state: {

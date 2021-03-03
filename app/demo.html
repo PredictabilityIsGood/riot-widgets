@@ -26,7 +26,7 @@
                     External Input Controls {state.tray?' - Auto Generated':''}
                     <button 
                         type="button" 
-                        class="btn btn-sm btn-secondary float-right"
+                        class="btn btn-sm btn-secondary float-end"
                         onclick="{toggleInputMode}">
                         Input Mode: {state.tray?'Auto Generated':'Custom HTML'}
                     </button>
@@ -117,12 +117,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-footer text-right">
+                <div class="card-footer text-end">
                     <div class="alert alert-primary d-inline p-2"><small>Setup for external post defined within <strong>tableOptions.externalPost</strong></small></div>
-                    <button id="demo-new" type="button" class="btn btn-primary ml-2">
+                    <button id="demo-new" type="button" class="btn btn-primary ms-2">
                         New
                     </button>
-                    <button id="demo-copy" type="button" class="btn btn-primary ml-2">
+                    <button id="demo-copy" type="button" class="btn btn-primary ms-2">
                         Copy
                     </button>
                 </div>
@@ -136,9 +136,6 @@
             </h1>
             <hr class="my-4">
             <div class="card w-100">
-                <div class="card-header d-none">
-                    Incidents
-                </div>
                 <widget-tree debugMode="{true}"></widget-tree>
             </div>
             <hr class="my-4">
@@ -152,9 +149,6 @@
             </h1>
             <hr class="my-4">
             <div class="card w-100">
-                <div class="card-header d-none">
-                    Incidents
-                </div>
                 <widget-card 
                     data="{state.sampleTableData.data}"
                     options="{state.sampleTableData.options}"
@@ -163,6 +157,19 @@
                     theme="{state.sampleTableData.theme}"
                     debugMode="{true}"
                     debug="{state.sampleTableData}"></widget-card>
+            </div>
+            <hr class="my-4">
+            
+        </div>
+    </div>
+    <div class="jumbotron jumbotron-fluid m-4">
+        <div class="container">
+            <h1 class="display-4 text-center text-muted">
+                < widget-bracket >
+            </h1>
+            <hr class="my-4">
+            <div class="card w-100">
+                <widget-bracket {...state.sampleBracketData}></widget-bracket>
             </div>
             <hr class="my-4">
             
@@ -341,11 +348,32 @@
                         }
                     },
                     theme:{
-                        bg:"light",
+                        bg:"white",
                         border:"light",
                         text:"dark"
                     },
 
+                },
+                sampleBracketData:{
+                    data:new Array(9).fill(null).map((blank,index)=>{
+                        let aPlayer = { name:`Player ${index}`, rating:Math.floor(((Math.random()*(2000 - 0)) - 0)) };
+                        return aPlayer;
+                    }),
+                    options:{
+                        name:{
+                            content:true
+                        },
+                        rating:{
+                            content:true,
+                            statistic:true,
+                            sort:true
+                        }
+                    },
+                    bracket_settings:{
+                        subdivision_size:3,
+                        size:9,
+                        title:"Testing"
+                    }
                 },
                 rebind:null
             },

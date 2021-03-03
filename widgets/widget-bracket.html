@@ -1,0 +1,386 @@
+<widget-bracket>
+    <div class="widget-bracket">
+        <h1 class="text-center text-muted">{state.bracket_settings.title}</h1>      
+        <div class="widget-bracket-group" each="{(group,groupIndex) in state.tree.groups}">
+            <div class="widget-bracket-group-statistics card" >
+                <div class="card-body">
+                    <h4>Group {groupIndex + 1}</h4>
+                    <h5>Statistics</h5>
+                    <span each="{(statistic,statisticIndex) in Object.entries(group.statistics)}">
+                        <h6>{statistic[0]}</h6>
+                        <span class="widget-bracket-group-statistics-metric" each="{(metric) in Object.keys(statistic[1])}">
+                            {metric}: {metric === "range" ? statistic[1][metric].min + " to " + statistic[1][metric].max : statistic[1][metric].toFixed(0)},
+                        </span>
+                        <br>
+                    </span>
+                </div>
+            </div>
+            <div class="widget-bracket-group-set-wrapper">
+                <div class="widget-bracket-group-set" each="{(set,setIndex) in group.grid}">
+                    <h4 class="widget-bracket-group-set-title text-center w-100">Round {setIndex + 1}</h4>
+                    <div class="widget-bracket-group-match card" each="{(match,matchIndex) in set}" key="{match.pk}">
+                        <div class="widget-bracket-group-match-title card-header">Match {matchIndex + 1}</div>
+                        <ul class="widget-bracket-group-match-content list-group list-group-flush">
+                            <button 
+                                type="button" 
+                                class="widget-bracket-group-item list-group-item list-group-item-action" 
+                                each="{(item,itemIndex) in getItems(match)}"
+                                key="{match.pk+itemIndex}"
+                                onclick="{()=>updateSelection(match,itemIndex)}">
+                                <span class="widget-bracket-group-item-seed badge bg-secondary rounded-pill">{item.seed}</span>
+                                <span class="widget-bracket-group-item-label ms-1">{item.label}</span>
+                                <span if="{item.selected}" class="widget-bracket-group-item-selected ms-1">&#128081;</span>
+                            </button>
+                        </ul>
+                    </div> 
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .widget-bracket {
+            margin:1rem;
+        }
+        .widget-bracket-group-statistics {
+            width:100%;
+        }
+        .widget-bracket-group-statistics-metric {
+            margin-right:10px;
+        }
+        .widget-bracket-group-set-wrapper {
+            position:relative;
+            display:flex;
+            flex-direction: row;
+            justify-content:flex-start;
+        }
+        .widget-bracket-group-set-title {
+            position:absolute;
+            top:.5rem;
+        }
+        .widget-bracket-group-set {
+            position:relative;
+            display:flex;
+            flex-direction:column;
+            justify-content:space-evenly;
+            max-width:300px;
+            vertical-align:top;
+            margin:1rem;
+            margin-top:1rem;
+            padding-top:40px;
+        }
+        .widget-bracket-group-match {
+            margin-top:.5rem;
+            margin-bottom:.5rem;
+        }
+        .widget-bracket-group-match-title {
+            padding-top:.3rem;
+            padding-bottom:.3rem;
+        }
+        .widget-bracket-group-item {
+            padding-top:.25rem;
+            padding-bottom:.25rem;
+        }
+        
+    </style>
+    <script>
+    export default {
+        state:{
+            options:{},
+            data:[],
+            tree:{},
+        },
+        debug:{
+            data:new Array(32).fill(null).map((blank,index)=>{
+                let aPlayer = { name:`Player ${index}`, rating:Math.floor(((Math.random()*(2000 - 0)) - 0)) };
+                return aPlayer;
+            }),
+            options:{
+                name:{
+                    content:true
+                },
+                rating:{
+                    content:true,
+                    statistic:true,
+                    sort:true
+                }
+            },
+            bracket_settings:{
+                subdivision_size:2,
+                size:16,
+                title:"16 Player Tournaments (Low Bracket & High Bracket)"
+            }
+        },
+        debugMode:false,
+        defaults:{
+            callbacks:{
+                put:(updated)=> console.log(updated),
+                post:(created)=> console.log(created),
+                delete:(deleted)=> console.log(deleted)
+            },
+            options:{
+                alias:null,
+                type:String,
+                autotype:(value)=>{return value.constructor},
+                visible:true,
+                put:true,
+                pk:false,
+                content:false,
+                html:false,
+                fk:"",
+                sort:false,
+                statistic:false
+            },
+            typeSort:{
+                "String":(a,b)=>{
+                    return a.localeCompare(b);
+                },
+                "Number":(a,b)=>{
+                    a=a==null?-Infinity:a;
+                    b=b==null?-Infinity:b;
+                    let result = parseFloat(a)-parseFloat(b);
+                    if(isNaN(result)){
+                        return 0;
+                    }
+                    else{
+                        result=result==-Infinity?-1:result;
+                        result=result==Infinity?1:result;
+                        return result;
+                    }
+                },
+                "Date":(a,b)=>{
+                    return a-b;
+                },
+                "Boolean":(a,b)=>{
+                    return a-b;
+                },
+                "Array":(a,b)=>{
+                    return a.join("-").localeCompare(b.join("-"));
+                }
+            },
+            bracket_settings:{
+                subdivision_size:2,
+                size:8,
+                title:"32 Player Tournament"
+            }
+        },
+        onBeforeMount(props,state){
+            this.bind(props,state);
+        },
+        onBeforeUnmount(props,state){
+            this.unbind();
+        },
+        bind(props,state){
+            if(props.debugMode==true){
+                this.debugMode=props.debugMode;
+                console.log(this," - debug mode on (widget-bracket)");
+                if(props.debug){
+                    this.debug=props.debug;
+                }
+            }
+
+            props = this.debugMode ? this.debug : props;
+
+            // set underlying table data
+            this.state.data = props.data || this.state.data ;
+
+            // set initial data keys                
+            this.state.datakeys = this.state.data.length > 0 ? Object.keys(this.state.data[0]) : Object.keys(props.options) ;
+            
+            // set column defaults
+            this.state.datakeys.forEach((key)=>{
+                let columnOptions=Object.assign({},this.defaults.options);
+                
+                Object.keys(columnOptions).forEach((optionname)=>{
+                    columnOptions[optionname] = props.options[key] && optionname in props.options[key] ? props.options[key][optionname] : columnOptions[optionname];
+                });
+
+                if(!(key in props.options) || !props.options[key].type ){
+                    let i=0; //search until first auto-type is found for col not null
+                    let autotype=null;
+                    while(autotype==null && i<this.state.data.length){
+                        if(this.state.data[i][key]!=null){
+                            columnOptions.autotype=columnOptions.autotype(this.state.data[i][key]);
+                            autotype=true;
+                        }
+                        i++;
+                    }
+                    columnOptions.type=columnOptions.autotype;
+                }
+                
+                this.state.options[key] = columnOptions; // set column options
+            });
+
+            // set content,statistic,sort columns
+            this.state.contentCols = [];
+            this.state.statisticCols = [];
+            this.state.sortCols = [];
+            Object.keys(this.state.options).forEach((key)=>{
+                if(this.state.options[key].content){
+                    this.state.contentCols.push(key);
+                }
+                if(this.state.options[key].statistic){
+                    this.state.statisticCols.push(key);
+                }
+                if(this.state.options[key].sort){
+                    this.state.sortCols.push(key);
+                }
+            });
+            
+            // set callback defaults
+            let callbacks = Object.assign({},this.defaults.callbacks);
+            Object.keys(callbacks).forEach((callback)=>{
+                callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
+            });
+
+            this.state.callbacks=callbacks;
+
+            // set typeSort options
+            this.state.typeSort = Object.assign({},this.defaults.typeSort);
+            this.state.typeSort = props.typeSort ? Object.assign(this.state.typeSort,props.typeSort) : this.state.typeSort;
+            
+            // set bracket settings
+            this.state.bracket_settings = Object.assign({},this.defaults.bracket_settings);
+            this.state.bracket_settings = props.bracket_settings ? Object.assign(this.state.bracket_settings,props.bracket_settings) : this.state.bracket_settings;
+            
+            // generate brackets
+            this.state.data = this.state.data.sort((a,b)=>{
+                let sortResult = 0;
+                let sortIndex = 0;
+                while(sortResult === 0 && sortIndex < this.state.sortCols.length){
+                    let colOptions = this.state.options[this.state.sortCols[sortIndex]];
+                    let sort = colOptions.type ? colOptions.type.name : colOptions.autotype.name;
+                    sortResult = this.state.typeSort[sort](a[this.state.sortCols[sortIndex]],b[this.state.sortCols[sortIndex]])
+                }
+                return sortResult;
+            });
+
+            let groupIndex = 0;
+            let matchKey = 0;
+            this.state.groups = grul.atHierarchy(this.state.data,[{
+                Name:{
+                    "head":(row)=>{
+                        let groupName = `Group ${Math.floor(groupIndex/this.state.bracket_settings.size )}`;
+                        groupIndex++;
+                        return groupName;
+                    }
+                },
+                Players:{
+                    "tail":(rows)=>{
+                        return rows;
+                    }
+                },
+                Matches:{
+                    "tail":(rows)=>{
+                        let matchList = [];
+                        let playerCount = rows.length;
+                        let matches = this.state.bracket_settings.size/this.state.bracket_settings.subdivision_size
+                        for(var i=1; i <= rows.length/this.state.bracket_settings.subdivision_size; i++){
+                            let matchup = [];
+                            for(var x=1; x <= this.state.bracket_settings.subdivision_size; x++){
+                                let chosenIndex;
+                                if(x%2==0){
+                                    chosenIndex = (((matches)*x)-i);
+                                }
+                                else{
+                                    chosenIndex = (((matches)*(x-1))+(i-1));
+                                }
+                                rows[chosenIndex].seed = (chosenIndex)+1;
+                                matchup.push(rows[chosenIndex]);
+                            }
+                            let match = {"pk":matchKey ,"group":matchup, "selection": null /*Math.floor(Math.random()*this.state.bracket_settings.subdivision_size)*/};
+                            matchKey++;
+                            matchList.push(match);
+                        }
+                        return matchList;
+                    }
+                },
+                Statistics:{
+                    "tail":(rows)=>{
+                        let bracketStatistics = {};
+                        this.state.statisticCols.forEach((col)=>{
+                            bracketStatistics[col] = rows.reduce((accumulator,player)=>{
+                                accumulator.range.min = player[col] < accumulator.range.min ? player[col] : accumulator.range.min;
+                                accumulator.range.max = player[col] > accumulator.range.max ? player[col] : accumulator.range.max;
+                                accumulator.cumulative = accumulator.cumulative + player[col];
+                                return accumulator;
+                            },{ range:{ min:Infinity, max:0 }, cumulative:0 });
+                            bracketStatistics[col].average = bracketStatistics[col].cumulative / rows.length;
+                        });
+                        return bracketStatistics;
+                    }
+                }
+            }]);
+            this.state.rounds = Math.abs(Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) - (Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size))) < .00000000000001 ? 
+            Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) :
+            Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size);
+            this.state.tree = {
+                "groups":this.state.groups.map((bracket)=>{
+                    // subdivide player matchups into groups representing advancement state of each matchup
+                    let bracketSchedule = grul.atSubdivision(bracket.Matches,this.state.bracket_settings.subdivision_size,(data,ntp,nlp)=>{
+                        data.selection = null // add randomized winner for the player advanced ()
+                    });
+                    let gridSchedule = new Array(this.state.rounds).fill(null).map((blank)=>[]);
+                    grul.atPattern(bracketSchedule,["selection"],{"tail":(data,htp,hlp,hop,root)=>{
+                        let round = (hlp.length-1)/2;
+                        data.round = (this.state.rounds - round);
+                        gridSchedule[round].push(data);
+                    }},-1);
+                    return { 
+                        "schedule":bracketSchedule,
+                        "statistics":bracket.Statistics,
+                        "grid":gridSchedule.reverse()
+                    };
+                })
+            };
+        },
+        unbind(){
+            if(this.mouseMove){
+                window.removeEventListener("mouseup",this.stopDrag);
+                window.removeEventListener("mousedown",this.startDrag);
+                window.removeEventListener("mousemove",this.mouseMove);
+            }
+            else{
+                console.log(this.mouseMove,"keyevents wiped prior to app mount");
+            }
+        },
+        inputs(){
+            return this.state.inputs;
+        },
+        getItems(object){
+            return object.group.map((item,index)=>{
+                let selection = this.getSelection(item);
+                return selection ? {
+                    "label":this.state.contentCols.map((col)=>{ return selection[col]; }).join(" - "),
+                    "seed":selection.seed,
+                    "selected":object.selection === index ? true : false
+                } : {
+                    "label":"TBD",
+                    "seed":"",
+                    "selected":false
+                };
+            });
+        },
+        getSelection(object){
+            if(object.selection === null){
+                return null;
+            }
+            if("selection" in object){ 
+                return this.getSelection(object.group[object.selection]);
+            }
+            return object;
+        },
+        updateSelection(object,selection){
+            if(object.selection === selection){
+                grul.atPattern(object,["selection"],(match,htp,hlp)=>{
+                    object.selection = null;
+                },-1);
+            }
+            else{
+                object.selection=selection;
+            }
+            console.log(this.state.tree);
+            this.update();
+        }
+    }
+    </script>
+</widget-bracket>

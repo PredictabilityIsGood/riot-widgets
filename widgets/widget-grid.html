@@ -10,8 +10,8 @@
         <thead class="widget-grid-header thead-{state.theme.bg} bg-{state.theme.bg} text-{state.theme.text}">
             <tr>
                 <th class="cell-counter border-{state.theme.border} text-muted">#</th>
-                <th onclick="{()=>sort(key)}" class="c-pointer text-left button-{state.theme.bg} border-{state.theme.border}  row-header" if="{key in state.options && state.options[key].visible==true}" each="{key in state.datakeys}" scope="col">{state.options[key].alias || key} 
-                    <span class="float-right w-0">
+                <th onclick="{()=>sort(key)}" class="c-pointer text-start button-{state.theme.bg} border-{state.theme.border}  row-header" if="{key in state.options && state.options[key].visible==true}" each="{key in state.datakeys}" scope="col">{state.options[key].alias || key} 
+                    <span class="float-end w-0">
                         <span if="{state.sort[key] && state.sort[key].type=='DESC'}" id="{key+'-DESC'}" class="order-desc">
                                 &#10142;
                         </span>
@@ -63,7 +63,7 @@
                             <slot name="{key}" {...cellSlotScope(row,key)} />
                         </template>
                         <div if="{!state.options[key].tag}">
-                            <div if="{state.options[key].type==Image}" class="rounded ppr-sdw table-img" style="background-image: url({row[key]})"></div>
+                            <div if="{state.options[key].type==Image}" class="rounded ppe-sdw table-img" style="background-image: url({row[key]})"></div>
                             {state.options[key].type != Image ? row[key] : ''}
                         </div>
                     </span>
@@ -130,7 +130,7 @@
                                 <option val="100">100</option>
                             </select>
                         </span>
-                        <span class="ml-3">
+                        <span class="ms-3">
                             <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="1">&#8676;</button>
                             <button class="footer-pagination-button" if="{state.pagination.page>1}" type="button" onclick="{setPage}" value="{state.pagination.page-1}">{state.pagination.page-1}</button>
                             page
@@ -139,12 +139,12 @@
                             <button class="footer-pagination-button" if="{state.pagination.page<Math.floor(state.data.length/state.pagination.show)}" type="button" onclick="{setPage}" value="{Math.ceil(state.data.length/state.pagination.show)}">&#8677;</button>
                             of { state.pagination.max }
                         </span>
-                        <span class="ml-3">
+                        <span class="ms-3">
                             displaying {state.pagination.start+1} to { state.data.length < state.pagination.end-1 ? state.data.length : state.pagination.end-1 } of { state.data.length }
                         </span>
                     </span>
                 </td>
-                <td class="cell-counter cell-counter-bottom c-pointer text-right border-{state.theme.border}">
+                <td class="cell-counter cell-counter-bottom c-pointer text-end border-{state.theme.border}">
                     <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge badge-success">
                         <span if="{state.mode!='post'}">+</span>
                         <span if="{state.mode=='post'}">x</span>
@@ -155,7 +155,7 @@
                         <span>X</span>
                         <div class="toast position-absolute d-none" >
                             <div class="toast-header">
-                                <strong class="mr-auto">To Be Deleted</strong>
+                                <strong class="me-auto">To Be Deleted</strong>
                                 <small>  Items</small>
                             </div>
                             <div class="toast-body text-muted row-header">

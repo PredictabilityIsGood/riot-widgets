@@ -1,10 +1,10 @@
 <widget-tree>
     <div class="list-group list-group-sm p-2 mini-tree">
         <div class="row" each="{item in state.structuredData}" if="{item['widget-tree-branch-show']}">
-            <div class="col text-right tree-button-join "
+            <div class="col text-end tree-button-join "
                 style="max-width:6%;width:6%;margin-left:{(item['widget-tree-branch-path'].length-2)}%;z-index:9">
                 <button if="{hasChildren(item)}" onclick="{()=>{toggleBranch(item)}}" 
-                        type="button" class="pl-1 btn btn-sm btn-outline-default edged"
+                        type="button" class="ps-1 btn btn-sm btn-outline-default edged"
                         style="max-width:100%;overflow:hidden;max-height:95%;">
                     <span if="{item['widget-tree-branch-collapse']}">-</span>
                     <span if="{!item['widget-tree-branch-collapse']}">+</span>
@@ -20,13 +20,13 @@
                     <span each="{col in state.contentcols}" onclick="{()=>{ putItem(item) }}">
                             {item[col]}
                     </span>
-                    <span class="badge badge-secondary float-right tree-control" onclick="{()=>{ sort(item) }}" >
+                    <span class="badge badge-secondary float-end tree-control" onclick="{()=>{ sort(item) }}" >
                         &#x21f5;
                     </span>
-                    <span class="badge badge-danger float-right tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
+                    <span class="badge badge-danger float-end tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
                         X
                     </span>
-                    <span class="badge badge-success float-right tree-control tree-control-thick" onclick="{()=>{ postItem(item) }}">
+                    <span class="badge badge-success float-end tree-control tree-control-thick" onclick="{()=>{ postItem(item) }}">
                         +
                     </span>
                 </button>
@@ -391,7 +391,7 @@
             this.state.structuredData=[];
             grul.atPattern(tree,["children",Array],{ "head":(item,meta,lit)=>{
                 let row  = item.data
-                row["widget-tree-branch-path"] = lit;
+                row["widget-tree-branch-path"] = lit;                
                 row["widget-tree-branch-show"] = true;
                 row["widget-tree-branch-sort"] = "NA";
                 row["widget-tree-branch-collapse"] = true;
@@ -401,7 +401,6 @@
                 this.state.structuredData.push(row);
             }})
             this.state.widgetTree=tree;
-            this.state.gridAttr.options;
         },
         hasChildren(item){
             return grul.pluck(this.state.widgetTree,item['widget-tree-branch-path']).children.length>0
@@ -690,16 +689,7 @@
         },
         sort(branch){
             let path=branch["widget-tree-branch-path"];
-            let sortSet=[];
-            let iLowest=Infinity;
-            this.state.structuredData.forEach((row,index)=>{
-                row["widget-tree-position"]=index;
-                if( row["widget-tree-branch-path"].slice(0,path.length).join("-")==path.join("-") &&
-                    row["widget-tree-branch-path"].length > path.length ){
-                    iLowest = iLowest > row["widget-tree-position"] ? row["widget-tree-position"] : iLowest;
-                    sortSet.push(row);
-                }
-            });
+            let sortRoot = grul.pluck(this.state.widgetTree,path.concat(["children"]));
 
             if(branch["widget-tree-branch-sort"]=="NA"){
                 branch["widget-tree-branch-sort"]="ASC";
@@ -712,47 +702,34 @@
             }
 
             if(branch["widget-tree-branch-sort"]=="ASC" || branch["widget-tree-branch-sort"]=="DESC"){
-                var orderedSorts = this.state.contentcols.map((col,index)=>{
+                var orderedsorts = this.state.contentcols.map((col,index)=>{
                     this.state.sort[col]={
                         "type":branch["widget-tree-branch-sort"],
                         "order":index+1
                     };
                     return col;
                 });
-                this.state.sort["widget-tree-branch-path"]={
-                    "type":branch["widget-tree-branch-sort"],
-                    "order":0
-                }
-                orderedSorts.splice(0,0,"widget-tree-branch-path");
-                sortSet.forEach((sortrow)=>{
-                    this.state.structuredData.forEach((structuredrow,index)=>{
-                        let match = true;
-                        this.state.pkcols.forEach((col)=>{
-                            structuredrow[col]!=sortrow[col]?match=false:true;
-                        });
-                        if(match){
-                            this.state.structuredData.splice(index,1);
-                        }
-                    });
-                });
-                var thisref = this;
+                var thisref=this;
                 function dimensionalSort(dimensionalsorts, dimensionalindex=0,a,b){
                     if(dimensionalindex<dimensionalsorts.length){
                         let key=dimensionalsorts[dimensionalindex];
-                        let typeSortName=key in thisref.state.options ? thisref.state.options[key].type.name : a[key].constructor.name;
-                        let sortresult=thisref.state.typeSort[typeSortName](a[key],b[key]);
+                        let sortresult=thisref.state.typeSort[thisref.state.options[key].type.name](a.data[key],b.data[key]);
                         sortresult = thisref.state.sort[key].type=="ASC" ? sortresult : -1 * sortresult;
                         dimensionalindex++;
                         return sortresult==0 ? dimensionalSort(dimensionalsorts,dimensionalindex,a,b) : sortresult;
                     }
+                    return 0;
                 }
-                sortSet.sort((a,b)=>{
-                    return dimensionalSort(orderedSorts,0,a,b);
+                sortRoot = sortRoot.sort((a,b)=>{ 
+                    return dimensionalSort(orderedsorts,0,a,b);
                 });
-                while(sortSet.length>0){
-                    this.state.structuredData.splice(iLowest,0,sortSet.splice(sortSet.length-1,1)[0]);
-                }
-                this.state.data=this.state.structuredData;
+                grul.pluck(this.state.widgetTree,path.concat(["children"]),sortRoot);
+                this.state.structuredData = [];
+                grul.atPattern(this.state.widgetTree,["children",Array],{"head":(treeItem,htp,hlp)=>{
+                    treeItem.data["widget-tree-branch-path"] = hlp;
+                    this.state.structuredData.push(treeItem.data);
+                    
+                }});
                 this.update();
             }
         }
