@@ -127,6 +127,7 @@
                     </button>
                 </div>
             </div>
+            <hr class="my-4">
         </div>
     </div>
     <div class="jumbotron jumbotron-fluid m-4">
@@ -139,7 +140,6 @@
                 <widget-tree debugMode="{true}"></widget-tree>
             </div>
             <hr class="my-4">
-            
         </div>
     </div>
     <div class="jumbotron jumbotron-fluid m-4">
@@ -159,7 +159,6 @@
                     debug="{state.sampleTableData}"></widget-card>
             </div>
             <hr class="my-4">
-            
         </div>
     </div>
     <div class="jumbotron jumbotron-fluid m-4">
@@ -169,10 +168,35 @@
             </h1>
             <hr class="my-4">
             <div class="card w-100">
+                <div class="row m-2 mt-4">
+                    <div class="col-sm-6">
+                        <div class="form-floating">
+                            <select id="Timezone-Viewer-Selection" 
+                                class="form-select form-select-sm" 
+                                aria-label="Select a display timezone" 
+                                onchange="{(e)=>updateViewTimeZone(e)}">
+                                <option value="local" selected="{state.view_timezone==='local'}">Use local timezone (default)</option>
+                                <option each="{zone in Object.keys(state.timezones)}" selected="{state.view_timezone===zone}" value="{zone}">{zone}</option>
+                            </select>
+                            <label for="Timezone-Viewer-Selection">Select view timezone (i.e. Where viewers are)</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-floating">
+                            <select id="Timezone-User-Selection" 
+                                class="form-select form-select-sm" 
+                                aria-label="Select a display timezone"
+                                onchange="{(e)=>updateInputTimeZone(e)}">
+                                <option value="local" selected="{state.input_timezone==='local'}">Use local timezone (default)</option>
+                                <option each="{zone in Object.keys(state.timezones)}" selected="{state.input_timezone===zone}" value="{zone}">{zone}</option>
+                            </select>
+                            <label for="Timezone-User-Selection">Select input timezone (i.e. Where you are)</label>
+                        </div>
+                    </div>
+                </div>
                 <widget-bracket {...state.sampleBracketData}></widget-bracket>
             </div>
             <hr class="my-4">
-            
         </div>
     </div>
     <style>
@@ -355,7 +379,7 @@
 
                 },
                 sampleBracketData:{
-                    data:new Array(9).fill(null).map((blank,index)=>{
+                    data:new Array(16).fill(null).map((blank,index)=>{
                         let aPlayer = { name:`Player ${index}`, rating:Math.floor(((Math.random()*(2000 - 0)) - 0)) };
                         return aPlayer;
                     }),
@@ -370,12 +394,52 @@
                         }
                     },
                     bracket_settings:{
-                        subdivision_size:3,
-                        size:9,
-                        title:"Testing"
+                        subdivision_size:2,
+                        size:16,
+                        title:"Testing",
+                        show:{
+                            title:false,
+                            statistics:false
+                        }
+                    },
+                    callbacks:{
+                        post:null,
+                        put:null,
+                        time_output:null,
+                        time_input_input:null,
+                        time_input_output:null
                     }
                 },
+                timezones:timezones,
+                view_timezone:"UTC",
+                input_timezone:"local",
                 rebind:null
+            },
+            onBeforeMount(){
+                let thisRef = this;
+                this.state.sampleBracketData.callbacks.time_output=((time_iso)=>{
+                    return this.state.view_timezone === "local" ? 
+                        luxon.DateTime.fromISO(time_iso).toLocaleString(luxon.DateTime.DATETIME_FULL) :
+                        luxon.DateTime.fromISO(time_iso,{zone:this.state.view_timezone}).toLocaleString(luxon.DateTime.DATETIME_FULL);
+                }).bind(thisRef);
+                this.state.sampleBracketData.callbacks.time_input_input=((time_iso)=>{
+                    return this.state.input_timezone === "local" ?
+                        luxon.DateTime.fromISO(time_iso).toISO().toString().slice(0,23) :
+                        luxon.DateTime.fromISO(time_iso).toISO({zone:this.state.input_timezone}).toString().slice(0,23);
+                        }).bind(thisRef);
+                this.state.sampleBracketData.callbacks.time_input_output=((time_iso)=>{
+                    return this.state.input_timezone === "local" ? 
+                        luxon.DateTime.fromISO(time_iso).toUTC().toString() :
+                        luxon.DateTime.fromISO(time_iso,{zone:this.state.input_timezone}).toUTC().toString();
+                        }).bind(thisRef);
+            },
+            updateViewTimeZone(e){
+                this.state.view_timezone = e.target.value;
+                this.update();
+            },
+            updateInputTimeZone(e){
+                this.state.input_timezone = e.target.value;
+                this.update();
             },
             getData(){
                 //send request to get data

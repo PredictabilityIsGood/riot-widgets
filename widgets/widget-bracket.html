@@ -1,11 +1,10 @@
 <widget-bracket>
     <div class="widget-bracket">
-        <h1 class="text-center text-muted">{state.bracket_settings.title}</h1>      
+        <h1 if="{state.bracket_settings.show.title}" class="widget-bracket-title display-4 text-center text-muted">{state.bracket_settings.title}</h1>    
         <div class="widget-bracket-group" each="{(group,groupIndex) in state.tree.groups}">
-            <div class="widget-bracket-group-statistics card" >
-                <div class="card-body">
-                    <h4>Group {groupIndex + 1}</h4>
-                    <h5>Statistics</h5>
+            <div class="widget-bracket-group-statistics">
+                <h3 class="text-center text-muted">Group {groupIndex + 1}</h3>
+                <div if="{state.bracket_settings.show.statistics}" class="card-body">
                     <span each="{(statistic,statisticIndex) in Object.entries(group.statistics)}">
                         <h6>{statistic[0]}</h6>
                         <span class="widget-bracket-group-statistics-metric" each="{(metric) in Object.keys(statistic[1])}">
@@ -17,19 +16,51 @@
             </div>
             <div class="widget-bracket-group-set-wrapper">
                 <div class="widget-bracket-group-set" each="{(set,setIndex) in group.grid}">
-                    <h4 class="widget-bracket-group-set-title text-center w-100">Round {setIndex + 1}</h4>
+                    <h4 class="widget-bracket-group-set-title text-center text-muted">Round {setIndex + 1}</h4>
                     <div class="widget-bracket-group-match card" each="{(match,matchIndex) in set}" key="{match.pk}">
-                        <div class="widget-bracket-group-match-title card-header">Match {matchIndex + 1}</div>
+                        <div class="widget-bracket-group-match-title card-header">
+                            <div class="row">
+                                <div class="col-3 pe-0">
+                                    Match {matchIndex + 1}
+                                </div>
+                                <div class="col-9 text-end">
+                                    <button if="{!match.edit.date}" 
+                                        type="button" 
+                                        class="btn badge bg-secondary text-white"
+                                        onclick="{(e)=>toggleMatchDateTimeLocal(match)}">
+                                        <span style="margin-left:-5px;margin-right:5px;">&#128336;</span> {(match.date ? getMatchDateTimeLocal(match.date) : 'To Be Determined')}
+                                    </button>
+                                    <input if="{match.edit.date}" 
+                                        onchange="{(e)=>setMatchDateTimeLocal(match,e.target.value)}"
+                                        class="widget-time-control form-control form-control-sm" 
+                                        type="datetime-local"
+                                        value="{match.date ? getMatchDateTimeLocalInput(match.date) : match.date}"/>
+                                </div>
+                            </div>
+                        </div>
                         <ul class="widget-bracket-group-match-content list-group list-group-flush">
                             <button 
                                 type="button" 
                                 class="widget-bracket-group-item list-group-item list-group-item-action" 
                                 each="{(item,itemIndex) in getItems(match)}"
                                 key="{match.pk+itemIndex}"
-                                onclick="{()=>updateSelection(match,itemIndex)}">
+                                onclick="{(e)=>updateSelection(e,match,itemIndex)}">
                                 <span class="widget-bracket-group-item-seed badge bg-secondary rounded-pill">{item.seed}</span>
                                 <span class="widget-bracket-group-item-label ms-1">{item.label}</span>
                                 <span if="{item.selected}" class="widget-bracket-group-item-selected ms-1">&#128081;</span>
+                                <span if="{!match.edit.results[itemIndex]}"
+                                    class="widget-bracket-group-item-result badge bg-info rounded-pill float-end"
+                                    onclick="{(e)=>toggleMatchResult(e,match,itemIndex,[groupIndex,setIndex,matchIndex,itemIndex])}">
+                                   <span if="{match.results[itemIndex] == ''}">&#9432;</span>  <span title="{match.results[itemIndex]}">{match.results[itemIndex].length > 16 ? match.results[itemIndex].slice(0,13) + "..." :  match.results[itemIndex] }</span>
+                                </span>
+                                <input if="{match.edit.results[itemIndex]}"
+                                    id="{getKey([groupIndex,setIndex,matchIndex,itemIndex])}"
+                                    onchange="{(e)=>setMatchResult(e,match,itemIndex,e.target.value)}"
+                                    onkeyup="{(e)=>e.preventDefault()}"
+                                    class="widget-result-control form-control form-control-sm my-2"
+                                    value="{match.results[itemIndex]}"
+                                    type="text" 
+                                    autofocus/>
                             </button>
                         </ul>
                     </div> 
@@ -47,11 +78,15 @@
         .widget-bracket-group-statistics-metric {
             margin-right:10px;
         }
+        .widget-time-control {
+            width:100%;
+        }
         .widget-bracket-group-set-wrapper {
             position:relative;
             display:flex;
             flex-direction: row;
             justify-content:flex-start;
+            overflow-x:auto;
         }
         .widget-bracket-group-set-title {
             position:absolute;
@@ -61,12 +96,15 @@
             position:relative;
             display:flex;
             flex-direction:column;
-            justify-content:space-evenly;
-            max-width:300px;
+            justify-content:space-around;
+            min-width:360px;
+            max-width:360px;
             vertical-align:top;
             margin:1rem;
             margin-top:1rem;
             padding-top:40px;
+            padding-right:2rem;
+            border-right:1px dashed lightgray;
         }
         .widget-bracket-group-match {
             margin-top:.5rem;
@@ -80,7 +118,26 @@
             padding-top:.25rem;
             padding-bottom:.25rem;
         }
-        
+        /* width */
+        .widget-bracket *::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+
+        /* Track */
+        .widget-bracket *::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+
+        /* Handle */
+        .widget-bracket *::-webkit-scrollbar-thumb {
+            background: rgba(13, 202, 240, .7); 
+        }
+
+        /* Handle on hover */
+        .widget-bracket *::-webkit-scrollbar-thumb:hover {
+            background: rgba(13, 202, 240, 1);
+        }
     </style>
     <script>
     export default {
@@ -90,7 +147,7 @@
             tree:{},
         },
         debug:{
-            data:new Array(32).fill(null).map((blank,index)=>{
+            data:new Array(16).fill(null).map((blank,index)=>{
                 let aPlayer = { name:`Player ${index}`, rating:Math.floor(((Math.random()*(2000 - 0)) - 0)) };
                 return aPlayer;
             }),
@@ -107,15 +164,17 @@
             bracket_settings:{
                 subdivision_size:2,
                 size:16,
-                title:"16 Player Tournaments (Low Bracket & High Bracket)"
+                title:"1v1 Tournament (4 Rounds)"
             }
         },
         debugMode:false,
         defaults:{
             callbacks:{
-                put:(updated)=> console.log(updated),
-                post:(created)=> console.log(created),
-                delete:(deleted)=> console.log(deleted)
+                post:(created)=> console.log(created),           // upon create use callback
+                put:(updated)=> console.log(updated),           // upon update use callback
+                time_output:(time_iso)=> time_iso,              // render time conversion from data (expects string)
+                time_input_output:(time_iso)=> time_iso,        // input time conversion on output (expects string)
+                time_input_input:(time_iso)=> time_iso          // input time conversion on input (expects string)
             },
             options:{
                 alias:null,
@@ -160,7 +219,11 @@
             bracket_settings:{
                 subdivision_size:2,
                 size:8,
-                title:"32 Player Tournament"
+                title:"1v1 Tournament (3 Rounds)",
+                show:{
+                    title:true,
+                    statistics:true
+                }
             }
         },
         onBeforeMount(props,state){
@@ -231,7 +294,6 @@
             Object.keys(callbacks).forEach((callback)=>{
                 callbacks[callback] = props.callbacks && props.callbacks[callback] ? props.callbacks[callback] : callbacks[callback] ;
             });
-
             this.state.callbacks=callbacks;
 
             // set typeSort options
@@ -241,8 +303,22 @@
             // set bracket settings
             this.state.bracket_settings = Object.assign({},this.defaults.bracket_settings);
             this.state.bracket_settings = props.bracket_settings ? Object.assign(this.state.bracket_settings,props.bracket_settings) : this.state.bracket_settings;
-            
-            // generate brackets
+
+            this.state.rounds = Math.abs(Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) - (Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size))) < .00000000000001 ? 
+                Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) :
+                Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size);
+
+            this.state.tree = props.tree ? props.tree : this.buildBracketTree();
+            this.buildGridSchedule();
+            if(!props.tree){
+                this.state.callbacks.post(this.state.tree);
+            }
+        },
+        unbind(){},
+        getKey(superKeyArr){
+            return superKeyArr.join("-");
+        },
+        buildBracketTree(){
             this.state.data = this.state.data.sort((a,b)=>{
                 let sortResult = 0;
                 let sortIndex = 0;
@@ -256,7 +332,7 @@
 
             let groupIndex = 0;
             let matchKey = 0;
-            this.state.groups = grul.atHierarchy(this.state.data,[{
+            let groups = grul.atHierarchy(this.state.data,[{
                 Name:{
                     "head":(row)=>{
                         let groupName = `Group ${Math.floor(groupIndex/this.state.bracket_settings.size )}`;
@@ -284,10 +360,19 @@
                                 else{
                                     chosenIndex = (((matches)*(x-1))+(i-1));
                                 }
-                                rows[chosenIndex].seed = (chosenIndex)+1;
+                                rows[chosenIndex].seed = rows.length-(chosenIndex);
                                 matchup.push(rows[chosenIndex]);
                             }
-                            let match = {"pk":matchKey ,"group":matchup, "selection": null /*Math.floor(Math.random()*this.state.bracket_settings.subdivision_size)*/};
+                            let match = {
+                                "pk":matchKey,
+                                "group":matchup.reverse(), 
+                                "date":null,
+                                "results":this.buildMatchResults(""),
+                                "edit":{
+                                    "date":false,
+                                    "results":this.buildMatchResults(false)
+                                },
+                                "selection": null};
                             matchKey++;
                             matchList.push(match);
                         }
@@ -310,41 +395,101 @@
                     }
                 }
             }]);
-            this.state.rounds = Math.abs(Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) - (Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size))) < .00000000000001 ? 
-            Math.round(Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size)) :
-            Math.log(this.state.bracket_settings.size) / Math.log(this.state.bracket_settings.subdivision_size);
-            this.state.tree = {
-                "groups":this.state.groups.map((bracket)=>{
+
+            // Match Sorts
+            // competitive
+            groups.forEach(group=>{
+                let optimalMatchups = new Array(this.state.rounds).fill(null).map(blank=>[]);
+                for(var i=0;i<group.Matches.length;i++){
+                    optimalMatchups[i%this.state.rounds].push(group.Matches[i]);
+                }
+                group.Matches=optimalMatchups.reduce((accumulator,matchups)=>{
+                    return accumulator.concat(matchups).reverse();
+                },[]);
+            });
+
+            // random
+            /*
+            groups.forEach(group=>{
+                let randomMatchups = [];
+                for(var i=0;i<group.Matches.length;){
+                    let index = Math.floor(Math.random()*group.Matches.length);
+                    randomMatchups.push(group.Matches.splice(index,-1));
+                }
+                group.Matches = randomMatchups;
+            });*/
+            
+            return {
+                "cols":this.state.options,
+                "bracket_settings":this.state.bracket_settings,
+                "groups":groups.map((bracket)=>{
                     // subdivide player matchups into groups representing advancement state of each matchup
                     let bracketSchedule = grul.atSubdivision(bracket.Matches,this.state.bracket_settings.subdivision_size,(data,ntp,nlp)=>{
-                        data.selection = null // add randomized winner for the player advanced ()
+                        data.edit = {
+                            "date":false,
+                            "results":this.buildMatchResults(false)
+                        };
+                        data.results = this.buildMatchResults("");       //store match data with key:index => value:Number
+                        data.date = null;                               //store date data with ISO 8601 (i.e. YYYY-MM-DDT00:00:00)
+                        data.selection = null;                          //store selection as sub-match index or null
                     });
-                    let gridSchedule = new Array(this.state.rounds).fill(null).map((blank)=>[]);
-                    grul.atPattern(bracketSchedule,["selection"],{"tail":(data,htp,hlp,hop,root)=>{
-                        let round = (hlp.length-1)/2;
-                        data.round = (this.state.rounds - round);
-                        gridSchedule[round].push(data);
-                    }},-1);
                     return { 
                         "schedule":bracketSchedule,
                         "statistics":bracket.Statistics,
-                        "grid":gridSchedule.reverse()
+                        "name":bracket.Name
                     };
                 })
             };
         },
-        unbind(){
-            if(this.mouseMove){
-                window.removeEventListener("mouseup",this.stopDrag);
-                window.removeEventListener("mousedown",this.startDrag);
-                window.removeEventListener("mousemove",this.mouseMove);
-            }
-            else{
-                console.log(this.mouseMove,"keyevents wiped prior to app mount");
+        buildGridSchedule(){
+            this.state.tree.groups.forEach((group)=>{
+                let gridSchedule = new Array(this.state.rounds).fill(null).map((blank)=>[]);
+                grul.atPattern(group.schedule,["selection"],{"tail":(data,htp,hlp,hop,root)=>{
+                    let round = (hlp.length-1)/2;
+                    data.round = (this.state.rounds - round);
+                    gridSchedule[round].push(data);
+                }},-1);
+                gridSchedule = gridSchedule.reverse();
+                group.grid = gridSchedule
+            });
+        },
+        toggleMatchDateTimeLocal(object){
+            object.edit.date = ! object.edit.date;
+            this.update();
+        },
+        setMatchDateTimeLocal(object,time_iso){
+            object.date = this.state.callbacks.time_input_output(time_iso);
+            this.toggleMatchDateTimeLocal(object);
+            this.state.callbacks.put(this.state.tree);
+        },
+        getMatchDateTimeLocal(time_iso){
+            return this.state.callbacks.time_output(time_iso);
+        },
+        getMatchDateTimeLocalInput(time_iso){
+            return this.state.callbacks.time_input_input(time_iso)
+        },
+        buildMatchResults(value){
+            let matchResultArr = new Array(this.state.bracket_settings.subdivision_size).fill(null).map((blank,index)=>{
+                return { [index]:"" };
+            });
+            return matchResultArr.reduce((accumulator,matchResult)=>{
+                return {...accumulator,...matchResult};
+            },{});
+        },
+        toggleMatchResult(e,object,itemIndex,superKeyArr=null){
+            e.stopPropagation();
+            object.edit.results[itemIndex] = ! object.edit.results[itemIndex];
+            this.update();
+            if(superKeyArr){
+                setTimeout(()=>{
+                    document.getElementById(this.getKey(superKeyArr)).focus();
+                },100)
             }
         },
-        inputs(){
-            return this.state.inputs;
+        setMatchResult(e,object,itemIndex,value){
+            object.results[itemIndex] = value;
+            this.toggleMatchResult(e,object,itemIndex);
+            this.state.callbacks.put(this.state.tree);
         },
         getItems(object){
             return object.group.map((item,index)=>{
@@ -369,7 +514,8 @@
             }
             return object;
         },
-        updateSelection(object,selection){
+        updateSelection(e,object,selection){
+            console.log(e);
             if(object.selection === selection){
                 grul.atPattern(object,["selection"],(match,htp,hlp)=>{
                     object.selection = null;
@@ -378,7 +524,6 @@
             else{
                 object.selection=selection;
             }
-            console.log(this.state.tree);
             this.update();
         }
     }
