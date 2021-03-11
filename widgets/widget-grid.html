@@ -93,7 +93,7 @@
             </tr>
             <tr if="{state.mode=='post'}" id="widget-grid-new">
                 <td onclick="{applyPost}" class="cell-control cell-counter cell-post c-pointer border-{state.theme.border} ">
-                    <span class="badge badge-secondary">
+                    <span class="badge bg-secondary">
                         add
                     </span>
                 </td>
@@ -112,7 +112,7 @@
             <tr if="{state.tableOptions.footer}">
                 <td class="footer-cell-control border-0" 
                     colspan="1">
-                    <span class="badge badge-secondary c-pointer d-none">
+                    <span class="badge bg-secondary c-pointer d-none">
                         <div class="rotate-45 bigger">
                             &#9906;
                         </div>
@@ -145,13 +145,13 @@
                     </span>
                 </td>
                 <td class="cell-counter cell-counter-bottom c-pointer text-end border-{state.theme.border}">
-                    <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge badge-success">
+                    <span onclick="{postMenu}" if="{state.tableOptions.post}" class="badge bg-success">
                         <span if="{state.mode!='post'}">+</span>
                         <span if="{state.mode=='post'}">x</span>
                     </span>
                 </td>
                 <td class="cell-counter cell-counter-bottom">
-                    <span onclick="{applyDelete}" if="{state.tableOptions.delete && state.selectedcnt > 0}" class="badge badge-danger c-pointer position-relative table-action">
+                    <span onclick="{applyDelete}" if="{state.tableOptions.delete && state.selectedcnt > 0}" class="badge bg-danger c-pointer position-relative table-action">
                         <span>X</span>
                         <div class="toast position-absolute d-none" >
                             <div class="toast-header">
@@ -410,6 +410,7 @@
         .footer-cell-control {
             outline:none;
             border-top:none !important;
+            border-bottom: none !important;
             font-size:.8rem;
             font-weight:300;
             padding-top:.5rem;

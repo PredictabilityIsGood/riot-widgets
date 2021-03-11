@@ -20,13 +20,13 @@
                     <span each="{col in state.contentcols}" onclick="{()=>{ putItem(item) }}">
                             {item[col]}
                     </span>
-                    <span class="badge badge-secondary float-end tree-control" onclick="{()=>{ sort(item) }}" >
+                    <span class="badge bg-secondary float-end tree-control" onclick="{()=>{ sort(item) }}" >
                         &#x21f5;
                     </span>
-                    <span class="badge badge-danger float-end tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
+                    <span class="badge bg-danger float-end tree-control tree-control-thick" onclick="{()=>{ deleteItem(item) }}">
                         X
                     </span>
-                    <span class="badge badge-success float-end tree-control tree-control-thick" onclick="{()=>{ postItem(item) }}">
+                    <span class="badge bg-success float-end tree-control tree-control-thick" onclick="{()=>{ postItem(item) }}">
                         +
                     </span>
                 </button>
